@@ -12,7 +12,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:kit-ui": "kit-ui-check src",
     "screenshots": "node screenshots/run.mjs",
-    "screenshots:check": "tsc -p screenshots/tsconfig.json --noEmit",
+    "screenshots:check": "tsc -p screenshots/tsconfig.json --noEmit && node --test screenshots/publish.node-test.mjs",
     "test": "vp test run"
   },
   "dependencies": {
