@@ -42,8 +42,9 @@ test("reads the Vercel CLI report envelope", async (t) => {
   const directory = await mkdtemp(path.join(tmpdir(), "docbank-vercel-report-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const report = path.join(directory, "report.json");
-  await writeFile(report, JSON.stringify({ fileCount: required.length, files: required.map((entry) => ({ path: entry })) }));
-  assert.deepEqual(await readDryRunReport(report), required.map((entry) => ({ path: entry })));
+  const files = required.map((entry) => ({ path: entry, size: 10 }));
+  await writeFile(report, JSON.stringify({ fileCount: required.length, files }));
+  assert.deepEqual(await readDryRunReport(report), files);
 });
 
 
@@ -56,6 +57,9 @@ test("rejects a missing build input", () => {
 
 
 for (const forbidden of [
+  "payload-1gb.bin",
+  "go.mod",
+  "deploy/private-data",
   "cmd/docbank/main.go",
   "internal/store/store.go",
   "frontend/package.json",
@@ -73,6 +77,13 @@ for (const forbidden of [
 }
 
 
+test("rejects an oversized upload within an approved source path", () => {
+  const report = required.map((filePath) => ({ path: filePath, size: 10 }));
+  report.push({ path: "docs/architecture/oversized.md", size: 10 * 1024 * 1024 });
+  assert.throws(() => assertUploadBoundary(report), /upload exceeds 10 MiB limit/);
+});
+
+
 test("rejects malformed reports instead of treating them as empty", async (t) => {
   const directory = await mkdtemp(path.join(tmpdir(), "docbank-vercel-report-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
@@ -81,4 +92,6 @@ test("rejects malformed reports instead of treating them as empty", async (t) =>
   await assert.rejects(() => readDryRunReport(report), /files array/);
   await writeFile(report, '{"files":[{"size":10}]}\n');
   await assert.rejects(() => readDryRunReport(report), /path field/);
+  await writeFile(report, '{"files":[{"path":"vercel.json"}]}\n');
+  await assert.rejects(() => readDryRunReport(report), /invalid size/);
 });

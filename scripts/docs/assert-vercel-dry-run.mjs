@@ -19,13 +19,38 @@ const requiredUploads = [
   "scripts/install.ps1",
 ];
 
-const forbiddenPrefixes = [
-  "cmd/",
-  "internal/",
-  "frontend/",
-  ".superpowers/",
-  "docs/superpowers/",
-  ".git/",
+const maximumUploadBytes = 10 * 1024 * 1024;
+
+const allowedUploads = new Set([
+  ...requiredUploads,
+  "LICENSES/Inter-OFL-1.1.txt",
+  "LICENSES/JetBrains-Mono-OFL-1.1.txt",
+  "docs/llms.txt",
+  "docs/overrides/main.html",
+  "docs/pyproject.toml",
+  "docs/scripts/check_built_site.py",
+  "docs/scripts/check_markdown_sources.py",
+  "docs/stylesheets/extra.css",
+  "docs/zensical-docs.sh",
+  "website/favicon.svg",
+  "website/fonts/Inter-Medium.woff2",
+  "website/fonts/Inter-Regular.woff2",
+  "website/fonts/Inter-SemiBold.woff2",
+  "website/fonts/JetBrainsMono-Bold.woff2",
+  "website/fonts/JetBrainsMono-Regular.woff2",
+  "website/fonts/JetBrainsMono-SemiBold.woff2",
+  "website/guide.md",
+  "website/guide/index.html",
+  "website/index.html",
+  "website/index.md",
+  "website/scripts/site.js",
+  "website/styles/site.css",
+]);
+
+const allowedUploadPatterns = [
+  /^docs\/(?!README\.md$)[^/]+\.md$/,
+  /^docs\/(?:agents|architecture|usage)\/[^/]+\.md$/,
+  /^website\/assets\/[a-z0-9][a-z0-9-]*\.svg$/,
 ];
 
 
@@ -43,23 +68,37 @@ function normalizeEntry(entry) {
 }
 
 
-function isForbidden(upload) {
-  const parts = upload.split("/");
-  return upload === "AGENTS.md"
-    || upload === "docs/README.md"
-    || forbiddenPrefixes.some((prefix) => upload.startsWith(prefix))
-    || parts.some((part) => part === ".env" || part.startsWith(".env."));
+function uploadSize(entry) {
+  if (typeof entry === "string") return 0;
+  if (!Number.isSafeInteger(entry?.size) || entry.size < 0) {
+    throw new Error(`Vercel dry-run entry has an invalid size: ${entry?.path ?? "<unknown>"}`);
+  }
+  return entry.size;
+}
+
+
+function isAllowed(upload) {
+  return allowedUploads.has(upload)
+    || allowedUploadPatterns.some((pattern) => pattern.test(upload));
 }
 
 
 export function assertUploadBoundary(entries) {
   if (!Array.isArray(entries)) throw new Error("Vercel dry-run report must be a JSON array");
-  const uploads = new Set(entries.map(normalizeEntry));
+  const normalized = entries.map((entry) => ({
+    path: normalizeEntry(entry),
+    size: uploadSize(entry),
+  }));
+  const uploads = new Set(normalized.map((entry) => entry.path));
   for (const required of requiredUploads) {
     if (!uploads.has(required)) throw new Error(`missing required upload: ${required}`);
   }
   for (const upload of uploads) {
-    if (isForbidden(upload)) throw new Error(`forbidden upload: ${upload}`);
+    if (!isAllowed(upload)) throw new Error(`forbidden upload: ${upload}`);
+  }
+  const totalBytes = normalized.reduce((total, entry) => total + entry.size, 0);
+  if (totalBytes > maximumUploadBytes) {
+    throw new Error(`Vercel upload exceeds 10 MiB limit: ${totalBytes} bytes`);
   }
   return [...uploads].sort();
 }
@@ -76,7 +115,10 @@ export async function readDryRunReport(reportPath) {
   if (!Array.isArray(entries)) {
     throw new Error("Vercel dry-run report must be a JSON array or contain a files array");
   }
-  entries.map(normalizeEntry);
+  entries.forEach((entry) => {
+    normalizeEntry(entry);
+    uploadSize(entry);
+  });
   return entries;
 }
 

@@ -38,7 +38,7 @@ class ParsedPage(html.parser.HTMLParser):
         return parsed
 
 
-def write_project(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path]:
+def write_project(root: pathlib.Path) -> pathlib.Path:
     source = root / "source"
     output = root / "site"
     (source / "usage").mkdir(parents=True)
@@ -82,10 +82,10 @@ def write_project(root: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path]:
         ),
         encoding="utf-8",
     )
-    return source, output
+    return output
 
 
-def assert_site(source: pathlib.Path, output: pathlib.Path) -> None:
+def assert_site(output: pathlib.Path) -> None:
     expected = {
         "index.html": "https://docbank.ai/docs/",
         "usage/example/index.html": "https://docbank.ai/docs/usage/example/",
@@ -114,20 +114,12 @@ def assert_site(source: pathlib.Path, output: pathlib.Path) -> None:
                     f"{relative}: local URL escapes /docs/: {raw_url!r}"
                 )
 
-    for relative in (pathlib.Path("index.md"), pathlib.Path("usage/example.md")):
-        published = output / relative
-        published.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source / relative, published)
-        if published.read_bytes() != (source / relative).read_bytes():
-            raise AssertionError(f"{relative}: Markdown peer differs from source")
-
-
 def main() -> None:
     with tempfile.TemporaryDirectory(
         prefix="zensical-subpath-", dir=DOCS_ROOT
     ) as temporary:
         root = pathlib.Path(temporary)
-        source, output = write_project(root)
+        output = write_project(root)
         subprocess.run(
             [
                 "uv",
@@ -145,7 +137,7 @@ def main() -> None:
             cwd=DOCS_ROOT,
             check=True,
         )
-        assert_site(source, output)
+        assert_site(output)
     print("Zensical /docs/ subpath behavior passed")
 
 

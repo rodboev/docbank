@@ -40,7 +40,11 @@ Instructions for autonomous coding agents working in this repository.
   repository root, `make docs-deploy DOCS_SOURCE=$(git rev-parse HEAD)` uploads
   an unpromoted production build, verifies it and the release boundary, and
   then promotes it. The deploy path does not generate screenshots, build the
-  product, run Docker, or install frontend dependencies.
+  product, run Docker, or install frontend dependencies. Pull-request jobs
+  never receive Vercel credentials; the authenticated upload dry run is a
+  trusted `main`-push check, and the manual production workflow validates its
+  requested source without credentials before entering the protected
+  environment.
 
 ## Private Data Boundary
 

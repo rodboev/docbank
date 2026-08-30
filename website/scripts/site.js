@@ -53,7 +53,7 @@ function installReleaseDownload() {
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (submit instanceof HTMLButtonElement) submit.disabled = true;
-    status.textContent = "Checking the latest signed release…";
+    status.textContent = "Checking the latest release…";
 
     try {
       const response = await fetch(releaseEndpoint, {

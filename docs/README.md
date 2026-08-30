@@ -75,8 +75,16 @@ release check, and only then promotes the build. Deployment does not generate
 screenshots, build the product, run Docker, or install frontend dependencies.
 
 The protected `Deploy documentation` workflow provides the same path for an
-explicitly supplied source SHA. It has no automatic push, pull-request, tag, or
-release trigger.
+explicitly supplied source SHA. A credential-free job checks that SHA against
+the release policy from `main` before the protected production job receives
+the validated SHA. It has no automatic push, pull-request, tag, or release
+trigger.
+
+Pull-request documentation checks never receive Vercel credentials. The
+authenticated upload dry run runs only after a trusted push to `main` and
+requires the repository `VERCEL_TOKEN` secret. Production deployment requires
+the `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` secrets on the
+protected `production` environment.
 
 ## Documentation boundary
 
