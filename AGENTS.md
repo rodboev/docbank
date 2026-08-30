@@ -34,6 +34,13 @@ Instructions for autonomous coding agents working in this repository.
   Run `make docs-build` after the final source or asset-pin edit. The strict
   build stages only the explicit public allowlist into `site/`; internal plans,
   scripts, and agent instructions must not enter the output.
+- A software release makes a documentation source eligible; it does not publish
+  that source. The selected source is normally the post-tag documentation-only
+  follow-up. Deployment still requires maintainer authorization. From the
+  repository root, `make docs-deploy DOCS_SOURCE=$(git rev-parse HEAD)` uploads
+  an unpromoted production build, verifies it and the release boundary, and
+  then promotes it. The deploy path does not generate screenshots, build the
+  product, run Docker, or install frontend dependencies.
 
 ## Private Data Boundary
 

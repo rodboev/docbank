@@ -54,6 +54,30 @@ documentation build or deployment.
 Never capture a developer vault, publish a partial set, or point the build at a
 mutable branch head.
 
+## Deployment
+
+A software release makes a documentation source eligible; it does not publish
+that source. The selected source is normally the documentation-only follow-up
+after the tag and release notes exist. A maintainer must still authorize every
+deployment.
+
+Link the Vercel project once from the repository root with `make docs-link`.
+Deploy an exact eligible source from a clean checkout with:
+
+```bash
+make docs-deploy DOCS_SOURCE=$(git rev-parse HEAD)
+```
+
+The command checks that the source is on `origin/main`, descends from the latest
+software release, and contains only approved documentation changes. It uploads
+an unpromoted production build, waits for Vercel to verify it, repeats the
+release check, and only then promotes the build. Deployment does not generate
+screenshots, build the product, run Docker, or install frontend dependencies.
+
+The protected `Deploy documentation` workflow provides the same path for an
+explicitly supplied source SHA. It has no automatic push, pull-request, tag, or
+release trigger.
+
 ## Documentation boundary
 
 - User- and agent-facing pages explain shipped capabilities, exact contracts,

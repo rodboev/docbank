@@ -24,8 +24,8 @@ if [ "$head_sha" != "$source_sha" ]; then
   printf 'DOCS_SOURCE must equal HEAD: expected %s, got %s\n' "$head_sha" "$source_sha" >&2
   exit 1
 fi
-if [ ! -f .vercel/project.json ]; then
-  printf 'documentation project is not linked at the repository root; run make docs-link\n' >&2
+if [ ! -f .vercel/project.json ] && { [ -z "${VERCEL_ORG_ID:-}" ] || [ -z "${VERCEL_PROJECT_ID:-}" ]; }; then
+  printf 'documentation project is not linked; run make docs-link or provide Vercel project IDs\n' >&2
   exit 1
 fi
 
