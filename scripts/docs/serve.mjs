@@ -242,6 +242,11 @@ const invokedPath = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1]
 if (import.meta.url === invokedPath) {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const repoRoot = path.resolve(here, "..", "..");
-  const server = await startDocsServer({ repoRoot });
+  const configuredPort = process.env.DOCBANK_DOCS_PORT;
+  const port = configuredPort === undefined ? 8000 : Number(configuredPort);
+  if (!Number.isInteger(port) || port < 0 || port > 65_535) {
+    throw new Error("DOCBANK_DOCS_PORT must be an integer from 0 through 65535");
+  }
+  const server = await startDocsServer({ repoRoot, port });
   process.stdout.write(`serving documentation at ${server.url}\n`);
 }
