@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>The document authority lifecycle — Docbank</title>
+    <meta name="description" content="Follow one document through Docbank from exact source ingestion to governed understanding, bounded retrieval, and verified recovery.">
+    <link rel="canonical" href="https://docbank.ai/guide/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles/site.css">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="The document authority lifecycle">
+    <meta property="og:description" content="Follow one document through Docbank from exact source ingestion to governed understanding, bounded retrieval, and verified recovery.">
+    <meta property="og:url" content="https://docbank.ai/guide/">
+    <meta property="og:site_name" content="Docbank">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="The document authority lifecycle">
+    <meta name="twitter:description" content="Follow one document through Docbank from exact source ingestion to governed understanding, bounded retrieval, and verified recovery.">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="/">Docbank</a>
+      <nav aria-label="Primary navigation">
+        <a aria-current="page" href="/guide/">Guide</a>
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/kenn-io/docbank">GitHub</a>
+      </nav>
+    </header>
+    <main>
+      <header class="hero compact">
+        <p class="eyebrow">Operator guide</p>
+        <h1>The document authority lifecycle</h1>
+        <p class="lede">One document moves through seven explicit boundaries. The source remains authoritative at every stop.</p>
+      </header>
+      <ol class="guide-stops">
+        <li id="ingest"><h2>Ingest</h2><p>Copy exact source bytes into the virtual tree without changing the source.</p><a href="/docs/usage/importing/">Importing documents</a></li>
+        <li id="identify"><h2>Identify</h2><p>Keep stable node identity, immutable versions, checksums, moves, and replacement history.</p><a href="/docs/architecture/editing-and-versions/">Editing and versions</a></li>
+        <li id="authorize"><h2>Authorize</h2><p>Review the processing boundary and retained outputs before document bytes can leave operator control.</p><a href="/docs/document-understanding/">Document understanding</a></li>
+        <li id="understand"><h2>Understand</h2><p>Publish sanitized renditions and other derivatives against an exact source version.</p><a href="/docs/document-understanding/">Document understanding</a></li>
+        <li id="retrieve"><h2>Retrieve</h2><p>Search current verified content while preserving the evidence and source identity behind a result.</p><a href="/docs/usage/searching/">Searching</a></li>
+        <li id="serve"><h2>Serve</h2><p>Use the same authority through human interfaces, automation, HTTP, and embedded Go.</p><a href="/docs/agents/">Docbank for agents</a></li>
+        <li id="prove"><h2>Prove</h2><p>Verify content and history, create a backup, and restore without making a provider authoritative.</p><a href="/docs/usage/backup/">Backup and restore</a></li>
+      </ol>
+    </main>
+    <footer>
+      <a href="/">Product</a>
+      <a href="/docs/">Operating documentation</a>
+    </footer>
+    <script type="module" src="/scripts/site.js"></script>
+  </body>
+</html>

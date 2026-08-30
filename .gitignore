@@ -10,6 +10,7 @@ internal/web/dist/*
 !internal/web/dist/.keep
 
 # docs build
+**/__pycache__/
 /.cache/docs-assets/
 /site/
 docs/.venv/

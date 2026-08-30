@@ -105,8 +105,8 @@ docs-assets-test:
 docs-assets-sync:
 	./scripts/sync-docs-assets.sh
 
-docs-build: bridge-contract docs-assets-sync
-	cd docs && ./zensical-docs.sh build
+docs-build: bridge-contract docs-subpath-test docs-assets-sync
+	node scripts/docs/build.mjs
 
 docs-serve:
 	cd docs && ./zensical-docs.sh serve

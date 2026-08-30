@@ -1,0 +1,39 @@
+:root {
+  color-scheme: dark;
+  --ink: #071411;
+  --panel: #0c1e1a;
+  --rule: #285148;
+  --teal: #41d7bd;
+  --text: #edf8f4;
+  --muted: #a7c1ba;
+  font-family: Inter, system-ui, sans-serif;
+  background: var(--ink);
+  color: var(--text);
+}
+
+* { box-sizing: border-box; }
+body { max-width: 76rem; margin: 0 auto; padding: 0 1.25rem; background: var(--ink); line-height: 1.6; }
+a { color: var(--teal); text-underline-offset: 0.2em; }
+a:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; }
+.site-header, footer { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.25rem 0; border-bottom: 1px solid var(--rule); }
+.site-header nav, footer, .actions { display: flex; flex-wrap: wrap; gap: 1rem; }
+.wordmark, h1, h2, .eyebrow, .ledger strong { font-family: ui-monospace, monospace; }
+.wordmark { color: var(--text); font-weight: 700; text-decoration: none; }
+main { padding: 4rem 0; }
+section, .guide-stops li { padding: 2rem 0; border-bottom: 1px solid var(--rule); }
+.hero { max-width: 62rem; padding-top: 2rem; }
+.hero.compact { padding-bottom: 3rem; }
+.eyebrow { color: var(--teal); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; }
+h1 { max-width: 21ch; font-size: clamp(2.4rem, 7vw, 5rem); line-height: 1.02; letter-spacing: -0.05em; }
+h2 { font-size: clamp(1.4rem, 3vw, 2rem); }
+.lede { max-width: 54rem; color: var(--muted); font-size: 1.2rem; }
+.button { display: inline-block; padding: 0.7rem 1rem; border: 1px solid var(--rule); text-decoration: none; }
+.button.primary { border-color: var(--teal); background: var(--teal); color: var(--ink); }
+.ledger { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; padding: 1px; background: var(--rule); list-style: none; }
+.ledger li { display: grid; gap: 0.5rem; padding: 1rem; background: var(--panel); }
+.ledger span { color: var(--muted); }
+.guide-stops { padding: 0; list-style: none; counter-reset: guide; }
+.guide-stops li { counter-increment: guide; }
+.guide-stops h2::before { content: "0" counter(guide) " / "; color: var(--teal); }
+footer { border-top: 1px solid var(--rule); border-bottom: 0; color: var(--muted); }
+@media (max-width: 760px) { .ledger { grid-template-columns: 1fr; } .site-header { align-items: flex-start; } }
