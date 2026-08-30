@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 600" role="img" aria-labelledby="title desc">
+  <title id="title">Docbank interface map</title>
+  <desc id="desc">CLI, web, TUI, HTTP, embedded Go, and MCP reach the same vault authority.</desc>
+  <rect width="760" height="600" fill="#071411"/>
+  <g fill="#0c1e1a" stroke="#25473f" stroke-width="2">
+    <rect x="250" y="230" width="260" height="140" rx="4"/>
+    <rect x="40" y="40" width="170" height="82" rx="4"/>
+    <rect x="295" y="40" width="170" height="82" rx="4"/>
+    <rect x="550" y="40" width="170" height="82" rx="4"/>
+    <rect x="40" y="478" width="170" height="82" rx="4"/>
+    <rect x="295" y="478" width="170" height="82" rx="4"/>
+    <rect x="550" y="478" width="170" height="82" rx="4"/>
+  </g>
+  <g fill="none" stroke="#41d7bd" stroke-width="2">
+    <path d="M125 122l190 108M380 122v108M635 122L445 230M125 478l190-108M380 478V370M635 478L445 370"/>
+  </g>
+  <g font-family="JetBrains Mono, monospace" text-anchor="middle">
+    <text x="380" y="280" fill="#41d7bd" font-size="18">DOCBANK VAULT</text>
+    <text x="380" y="318" fill="#edf8f4" font-size="22">one authority</text>
+    <text x="380" y="346" fill="#a7c1ba" font-size="15">stable identity · exact bytes</text>
+    <text x="125" y="90" fill="#edf8f4" font-size="20">CLI</text>
+    <text x="380" y="90" fill="#edf8f4" font-size="20">WEB</text>
+    <text x="635" y="90" fill="#edf8f4" font-size="20">TUI</text>
+    <text x="125" y="528" fill="#edf8f4" font-size="20">HTTP</text>
+    <text x="380" y="528" fill="#edf8f4" font-size="20">GO</text>
+    <text x="635" y="528" fill="#edf8f4" font-size="20">MCP</text>
+  </g>
+</svg>

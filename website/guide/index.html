@@ -18,6 +18,7 @@
     <meta name="twitter:description" content="Follow one document through Docbank from exact source ingestion to governed understanding, bounded retrieval, and verified recovery.">
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
       <a class="wordmark" href="/">Docbank</a>
       <nav aria-label="Primary navigation">
@@ -26,26 +27,164 @@
         <a href="https://github.com/kenn-io/docbank">GitHub</a>
       </nav>
     </header>
-    <main>
+
+    <main id="main">
       <header class="hero compact">
         <p class="eyebrow">Operator guide</p>
         <h1>The document authority lifecycle</h1>
-        <p class="lede">One document moves through seven explicit boundaries. The source remains authoritative at every stop.</p>
+        <p class="lede">One document moves through seven explicit boundaries. Exact source bytes remain authoritative at every stop.</p>
+        <ol class="guide-nav" aria-label="Guide stops">
+          <li><a href="#ingest">01 Ingest</a></li>
+          <li><a href="#identify">02 Identify</a></li>
+          <li><a href="#authorize">03 Authorize</a></li>
+          <li><a href="#understand">04 Understand</a></li>
+          <li><a href="#retrieve">05 Retrieve</a></li>
+          <li><a href="#serve">06 Serve</a></li>
+          <li><a href="#prove">07 Prove</a></li>
+        </ol>
       </header>
+
       <ol class="guide-stops">
-        <li id="ingest"><h2>Ingest</h2><p>Copy exact source bytes into the virtual tree without changing the source.</p><a href="/docs/usage/importing/">Importing documents</a></li>
-        <li id="identify"><h2>Identify</h2><p>Keep stable node identity, immutable versions, checksums, moves, and replacement history.</p><a href="/docs/architecture/editing-and-versions/">Editing and versions</a></li>
-        <li id="authorize"><h2>Authorize</h2><p>Review the processing boundary and retained outputs before document bytes can leave operator control.</p><a href="/docs/document-understanding/">Document understanding</a></li>
-        <li id="understand"><h2>Understand</h2><p>Publish sanitized renditions and other derivatives against an exact source version.</p><a href="/docs/document-understanding/">Document understanding</a></li>
-        <li id="retrieve"><h2>Retrieve</h2><p>Search current verified content while preserving the evidence and source identity behind a result.</p><a href="/docs/usage/searching/">Searching</a></li>
-        <li id="serve"><h2>Serve</h2><p>Use the same authority through human interfaces, automation, HTTP, and embedded Go.</p><a href="/docs/agents/">Docbank for agents</a></li>
-        <li id="prove"><h2>Prove</h2><p>Verify content and history, create a backup, and restore without making a provider authoritative.</p><a href="/docs/usage/backup/">Backup and restore</a></li>
+        <li class="guide-stop" id="ingest">
+          <div class="guide-copy">
+            <h2>Ingest the exact source</h2>
+            <p>Docbank copies bytes into the vault without making the source path part of document identity. The virtual tree gives operators a familiar hierarchy while retained content stays addressable by checksum.</p>
+            <a href="/docs/usage/importing/">Importing documents</a>
+          </div>
+          <div class="guide-media">
+            <figure class="capture">
+              <a href="/assets/generated/web-vault-browser.png" data-lightbox>
+                <img src="/assets/generated/web-vault-browser.png" alt="Synthetic Docbank vault after document ingestion">
+              </a>
+              <figcaption class="caption">A generated vault in the real web interface.</figcaption>
+            </figure>
+          </div>
+        </li>
+
+        <li class="guide-stop" id="identify">
+          <div class="guide-copy">
+            <h2>Identify the record</h2>
+            <p>A stable node identity survives moves and renames. Replacement creates an immutable content version, preserving checksums and history instead of silently changing what an identifier means.</p>
+            <a href="/docs/architecture/editing-and-versions/">Editing and versions</a>
+          </div>
+          <div class="guide-media">
+            <figure class="capture">
+              <a href="/assets/generated/web-retained-version-download.png" data-lightbox>
+                <img src="/assets/generated/web-retained-version-download.png" alt="Docbank retained version history and download action">
+              </a>
+              <figcaption class="caption">Retained versions remain inspectable and retrievable.</figcaption>
+            </figure>
+          </div>
+        </li>
+
+        <li class="guide-stop" id="authorize">
+          <div class="guide-copy">
+            <h2>Authorize the boundary</h2>
+            <p>Before processing, the operator chooses where document bytes may go and which outputs may be retained. Authorization governs a task; it does not transfer source authority to the processor.</p>
+            <a href="/docs/document-understanding/">Document understanding</a>
+          </div>
+          <div class="guide-media">
+            <figure class="diagram">
+              <img src="/assets/authority-ledger.svg" alt="Source authority above authorized, version-bound processing steps">
+            </figure>
+          </div>
+        </li>
+
+        <li class="guide-stop" id="understand">
+          <div class="guide-copy">
+            <h2>Understand without replacing</h2>
+            <p>Normalized text, sanitized renditions, and embeddings are derivatives of one exact source version. They can improve retrieval or be regenerated without becoming the original record.</p>
+            <a href="/docs/document-understanding/">Understanding outputs</a>
+          </div>
+          <div class="guide-media">
+            <figure class="diagram">
+              <img src="/assets/authority-ledger.svg" alt="Derivatives retained beneath an exact authoritative source version">
+            </figure>
+          </div>
+        </li>
+
+        <li class="guide-stop" id="retrieve">
+          <div class="guide-copy">
+            <h2>Retrieve behind a source fence</h2>
+            <p>Search ranks names and verified current text while keeping the document, version, and evidence behind each result available. An index helps locate the record; it does not define it.</p>
+            <a href="/docs/usage/searching/">Searching</a>
+          </div>
+          <div class="guide-media">
+            <figure class="capture">
+              <a href="/assets/generated/web-search-results.png" data-lightbox>
+                <img src="/assets/generated/web-search-results.png" alt="Docbank ranked search over a synthetic document catalog">
+              </a>
+              <figcaption class="caption">Search results in the generated documentation vault.</figcaption>
+            </figure>
+          </div>
+        </li>
+
+        <li class="guide-stop" id="serve">
+          <div class="guide-copy">
+            <h2>Serve one authority</h2>
+            <p>The CLI, web application, TUI, HTTP API, embedded Go package, and agent tools operate over the same vault model. Each surface inherits the same identity, revision, and integrity boundaries.</p>
+            <a href="/docs/agents/">Docbank for agents</a>
+          </div>
+          <div class="guide-media">
+            <figure class="diagram">
+              <img src="/assets/interface-map.svg" alt="CLI, web, TUI, HTTP, Go, and MCP interfaces sharing one Docbank vault">
+            </figure>
+          </div>
+        </li>
+
+        <li class="guide-stop" id="prove">
+          <div class="guide-copy">
+            <h2>Prove and recover</h2>
+            <p>Verification checks content and history before an operator needs them. Incremental snapshots restore exact bytes, metadata, and retained history without relying on a processing or search provider.</p>
+            <a href="/docs/usage/backup/">Backup and restore</a>
+          </div>
+          <div class="guide-media">
+            <figure class="capture">
+              <a href="/assets/generated/web-audit-evidence.png" data-lightbox>
+                <img src="/assets/generated/web-audit-evidence.png" alt="Docbank evidence view for a protected synthetic document scope">
+              </a>
+              <figcaption class="caption">Evidence is visible before recovery is required.</figcaption>
+            </figure>
+            <figure class="diagram">
+              <img src="/assets/recovery-flow.svg" alt="Verified snapshot restoring a vault without a processing provider">
+            </figure>
+          </div>
+        </li>
       </ol>
+
+      <section class="site-section" aria-labelledby="operate-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-index">Next</p>
+            <h2 id="operate-title">Operate the vault.</h2>
+          </div>
+          <div>
+            <p>Move from the lifecycle model to setup, exact commands, automation contracts, storage policy, and recovery procedures.</p>
+            <div class="actions">
+              <a class="button primary" href="/docs/quickstart/">Run the quickstart</a>
+              <a class="button" href="/docs/">Open all documentation</a>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
-    <footer>
-      <a href="/">Product</a>
-      <a href="/docs/">Operating documentation</a>
+
+    <footer class="site-footer">
+      <p>Docbank keeps the source authoritative.</p>
+      <nav class="footer-links" aria-label="Footer navigation">
+        <a href="/">Product</a>
+        <a href="/guide.md">Markdown</a>
+        <a href="/docs/">Operating docs</a>
+      </nav>
     </footer>
+
+    <dialog data-lightbox-dialog aria-labelledby="lightbox-title">
+      <div class="dialog-header">
+        <p id="lightbox-title" data-lightbox-title>Documentation capture</p>
+        <button class="dialog-close" type="button" data-lightbox-close aria-label="Close image">Close</button>
+      </div>
+      <img alt="Expanded documentation capture">
+    </dialog>
     <script type="module" src="/scripts/site.js"></script>
   </body>
 </html>
