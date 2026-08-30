@@ -118,20 +118,19 @@ docs-link:
 		echo "vercel CLI not found. Install: https://vercel.com/docs/cli" >&2; \
 		exit 1; \
 	fi
-	cd docs && vercel link
+	vercel link
+	@test -f .vercel/project.json || { \
+		echo "Vercel did not create .vercel/project.json at the repository root." >&2; \
+		exit 1; \
+	}
 
-docs-deploy: docs-build
-	@if ! command -v vercel >/dev/null 2>&1; then \
-		echo "vercel CLI not found. Install: https://vercel.com/docs/cli" >&2; \
+docs-deploy:
+	@if [ -z "$(DOCS_SOURCE)" ]; then \
+		echo "DOCS_SOURCE is required and must be a full source commit SHA." >&2; \
+		echo "Run: make docs-deploy DOCS_SOURCE=$$(git rev-parse HEAD)" >&2; \
 		exit 1; \
 	fi
-	@if [ ! -f docs/.vercel/project.json ]; then \
-		echo "docs are not linked to a Vercel project yet." >&2; \
-		echo "Run: vercel login && make docs-link" >&2; \
-		exit 1; \
-	fi
-	cp -R docs/.vercel docs/site/.vercel
-	vercel deploy docs/site --prod --yes
+	DOCS_SOURCE="$(DOCS_SOURCE)" ./scripts/deploy-docs.sh
 
 help:
 	@echo "Targets: build install clean test test-v release-scripts-test frontend frontend-test frontend-dev docs-screenshots fmt lint lint-ci tidy install-hooks docs-install docs-subpath-test docs-assets-test docs-assets-sync docs-build docs-serve docs-link docs-deploy"

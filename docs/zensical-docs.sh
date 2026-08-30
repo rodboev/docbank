@@ -18,7 +18,11 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 uv_run=(uv run --project "$docs_root" --frozen --no-dev)
 
-repo_root="$(git -C "$docs_root" rev-parse --show-toplevel)"
+if [[ -n "${DOCBANK_REPO_ROOT:-}" ]]; then
+  repo_root="$(cd "$DOCBANK_REPO_ROOT" && pwd)"
+else
+  repo_root="$(git -C "$docs_root" rev-parse --show-toplevel)"
+fi
 if [[ "/$site_dir/" == *"/../"* ]]; then
   printf 'refusing docs site directory containing parent traversal: %s\n' "$site_dir" >&2
   exit 2
