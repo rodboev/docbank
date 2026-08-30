@@ -95,15 +95,17 @@
       <header class="hero compact">
         <p class="eyebrow">Operator guide</p>
         <h1>The document authority lifecycle</h1>
-        <p class="lede">One document moves through seven explicit boundaries. Exact source bytes remain authoritative at every stop.</p>
+        <p class="lede">One document moves through nine explicit boundaries. Exact source bytes remain authoritative at every stop.</p>
         <ol class="guide-nav" aria-label="Guide stops">
           <li><a href="#ingest">01 Ingest</a></li>
           <li><a href="#identify">02 Identify</a></li>
           <li><a href="#authorize">03 Authorize</a></li>
-          <li><a href="#understand">04 Understand</a></li>
-          <li><a href="#retrieve">05 Retrieve</a></li>
-          <li><a href="#serve">06 Serve</a></li>
-          <li><a href="#prove">07 Prove</a></li>
+          <li><a href="#render">04 Render</a></li>
+          <li><a href="#embed">05 Embed</a></li>
+          <li><a href="#retrieve">06 Retrieve</a></li>
+          <li><a href="#replace">07 Replace</a></li>
+          <li><a href="#serve">08 Serve</a></li>
+          <li><a href="#prove">09 Prove</a></li>
         </ol>
       </header>
 
@@ -153,10 +155,10 @@
           </div>
         </li>
 
-        <li class="guide-stop" id="understand">
+        <li class="guide-stop" id="render">
           <div class="guide-copy">
-            <h2>Understand without replacing</h2>
-            <p>Normalized text, sanitized renditions, and embeddings are derivatives of one exact source version. They can improve retrieval or be regenerated without becoming the original record.</p>
+            <h2>Render without replacing</h2>
+            <p>OCR and rendition providers turn the source into normalized Markdown and text through an enforceable contract. A rendition is a governed derivative of one exact version; it can improve retrieval or be regenerated without becoming the original record.</p>
             <a href="/docs/document-understanding/">Understanding outputs</a>
           </div>
           <div class="guide-media">
@@ -166,10 +168,23 @@
           </div>
         </li>
 
+        <li class="guide-stop" id="embed">
+          <div class="guide-copy">
+            <h2>Embed and index deterministically</h2>
+            <p>Chunks, embedding generations, and vector indexes enter the same catalog as every other derivative: fingerprinted, bound to provider and model identity, and rebuildable from retained evidence. The catalog records what produced every vector.</p>
+            <a href="/docs/document-understanding/">Embedding plans</a>
+          </div>
+          <div class="guide-media">
+            <figure class="diagram">
+              <img src="/assets/intelligence-pipeline.svg" alt="A source version feeding rendition, chunk, embedding, and index derivatives behind a consent boundary">
+            </figure>
+          </div>
+        </li>
+
         <li class="guide-stop" id="retrieve">
           <div class="guide-copy">
             <h2>Retrieve behind a source fence</h2>
-            <p>Search ranks names and verified current text while keeping the document, version, and evidence behind each result available. An index helps locate the record; it does not define it.</p>
+            <p>Hybrid search fuses lexical and semantic signals, optionally expands and reranks, and explains each ranked result. The fence holds: every answer keeps the document, version, and evidence behind it. An index helps locate the record; it does not define it.</p>
             <a href="/docs/usage/searching/">Searching</a>
           </div>
           <div class="guide-media">
@@ -178,6 +193,19 @@
                 <img src="/assets/generated/web-search-results.png" alt="Docbank ranked search over a synthetic document catalog">
               </a>
               <figcaption class="caption">Search results in the generated documentation vault.</figcaption>
+            </figure>
+          </div>
+        </li>
+
+        <li class="guide-stop" id="replace">
+          <div class="guide-copy">
+            <h2>Replace intelligence, keep the record</h2>
+            <p>Consent can be revoked and derived state is disposable. Purge renditions, embeddings, and indexes, re-derive them through a different provider, or restore them from backup with no provider in the loop. The originals are never touched.</p>
+            <a href="/docs/usage/backup/">Backup and restore</a>
+          </div>
+          <div class="guide-media">
+            <figure class="diagram">
+              <img src="/assets/derivative-cycle.svg" alt="Consent, derivation, retrieval, and purge cycling around a source that stays exact">
             </figure>
           </div>
         </li>

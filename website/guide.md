@@ -1,15 +1,17 @@
 # The document authority lifecycle
 
-One document moves through seven explicit boundaries. Exact source bytes remain
+One document moves through nine explicit boundaries. Exact source bytes remain
 authoritative at every stop.
 
 1. [Ingest](#ingest)
 2. [Identify](#identify)
 3. [Authorize](#authorize)
-4. [Understand](#understand)
-5. [Retrieve](#retrieve)
-6. [Serve](#serve)
-7. [Prove](#prove)
+4. [Render](#render)
+5. [Embed](#embed)
+6. [Retrieve](#retrieve)
+7. [Replace](#replace)
+8. [Serve](#serve)
+9. [Prove](#prove)
 
 ## Ingest
 
@@ -44,27 +46,53 @@ steps](https://docbank.ai/assets/authority-ledger.svg)
 
 [Document understanding](/docs/document-understanding/)
 
-## Understand
+## Render
 
-Normalized text, sanitized renditions, and embeddings are derivatives of one
-exact source version. They can improve retrieval or be regenerated without
-becoming the original record.
+OCR and rendition providers turn the source into normalized Markdown and text
+through an enforceable contract. A rendition is a governed derivative of one
+exact version; it can improve retrieval or be regenerated without becoming the
+original record.
 
 ![Derivatives retained beneath an exact authoritative source
 version](https://docbank.ai/assets/authority-ledger.svg)
 
 [Understanding outputs](/docs/document-understanding/)
 
+## Embed
+
+Chunks, embedding generations, and vector indexes enter the same catalog as
+every other derivative: fingerprinted, bound to provider and model identity,
+and rebuildable from retained evidence. The catalog records what produced
+every vector.
+
+![A source version feeding rendition, chunk, embedding, and index derivatives
+behind a consent boundary](https://docbank.ai/assets/intelligence-pipeline.svg)
+
+[Embedding plans](/docs/document-understanding/)
+
 ## Retrieve
 
-Search ranks names and verified current text while keeping the document,
-version, and evidence behind each result available. An index helps locate the
+Hybrid search fuses lexical and semantic signals, optionally expands and
+reranks, and explains each ranked result. The fence holds: every answer keeps
+the document, version, and evidence behind it. An index helps locate the
 record; it does not define it.
 
 ![Docbank ranked search over a synthetic document
 catalog](https://docbank.ai/assets/generated/web-search-results.png)
 
 [Searching](/docs/usage/searching/)
+
+## Replace
+
+Consent can be revoked and derived state is disposable. Purge renditions,
+embeddings, and indexes, re-derive them through a different provider, or
+restore them from backup with no provider in the loop. The originals are never
+touched.
+
+![Consent, derivation, retrieval, and purge cycling around a source that stays
+exact](https://docbank.ai/assets/derivative-cycle.svg)
+
+[Backup and restore](/docs/usage/backup/)
 
 ## Serve
 

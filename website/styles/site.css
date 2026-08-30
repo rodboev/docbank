@@ -456,13 +456,26 @@ button.button:hover {
 }
 
 .proof-grid,
-.choice-grid,
-.boundary-grid {
+.choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
   padding: 1px;
   background: var(--rule);
+}
+
+.boundary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  padding: 1px;
+  background: var(--rule);
+}
+
+.pipeline {
+  margin: 0 0 clamp(2rem, 5vw, 3rem);
+  border: 1px solid var(--rule);
+  background: var(--panel);
 }
 
 .proof,
@@ -537,7 +550,7 @@ dialog img {
 
 .guide-nav {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 1px;
   margin: 2.5rem 0 0;
   padding: 1px;
@@ -585,7 +598,7 @@ dialog img {
   font-family: var(--mono);
   font-size: 0.76rem;
   letter-spacing: 0.08em;
-  content: "0" counter(guide) " / 07";
+  content: "0" counter(guide) " / 09";
 }
 
 .guide-copy p {
@@ -685,7 +698,11 @@ dialog img {
   }
 
   .guide-nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .boundary-grid {
+    grid-template-columns: 1fr;
   }
 
   .guide-media {

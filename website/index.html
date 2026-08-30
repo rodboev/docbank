@@ -204,10 +204,45 @@
         </div>
       </section>
 
+      <section class="site-section" aria-labelledby="intelligence-title">
+        <div class="section-heading">
+          <div>
+            <p class="section-index">05 / Intelligence</p>
+            <h2 id="intelligence-title">AI understanding, on the record.</h2>
+          </div>
+          <p>OCR output, renditions, chunks, embeddings, and vector indexes are records too: cataloged, fingerprinted, and bound to the exact source version that produced them.</p>
+        </div>
+        <figure class="diagram pipeline">
+          <img src="/assets/intelligence-pipeline.svg" alt="One exact source version feeding governed rendition, chunk, embedding, and index derivatives that can be purged and rebuilt without touching the record">
+        </figure>
+        <div class="proof-grid">
+          <article class="proof">
+            <p class="proof-tag">Catalog derivatives</p>
+            <h3>Bind understanding to its source.</h3>
+            <p>Renditions, chunk sets, embedding generations, and vector indexes publish atomically into a durable catalog, each fingerprinted against one immutable source version.</p>
+          </article>
+          <article class="proof">
+            <p class="proof-tag">Replace providers</p>
+            <h3>Swap models without losing the record.</h3>
+            <p>Local, self-hosted, and hosted OCR and embedding providers plug into standard bridges. Consent is durable and revocable, and uploads bind to the exact inspected bytes.</p>
+          </article>
+          <article class="proof">
+            <p class="proof-tag">Rebuild intelligence</p>
+            <h3>Treat derived state as disposable.</h3>
+            <p>Purge, re-derive, and rebuild renditions, embeddings, and indexes deterministically. Derivatives back up and restore without any provider, and originals are never touched.</p>
+          </article>
+          <article class="proof">
+            <p class="proof-tag">Explain retrieval</p>
+            <h3>Rank with reasons, answer with evidence.</h3>
+            <p>Hybrid lexical and semantic search, with optional expansion and reranking, explains each ranked result and keeps the document and version behind it.</p>
+          </article>
+        </div>
+      </section>
+
       <section class="site-section" aria-labelledby="interfaces-title">
         <div class="interface-layout">
           <div>
-            <p class="section-index">05 / Interfaces</p>
+            <p class="section-index">06 / Interfaces</p>
             <h2 id="interfaces-title">One authority across every surface.</h2>
             <p class="lede">People, applications, and agents work through interfaces suited to the task. They do not create separate copies of record.</p>
             <ul class="interface-list">
@@ -232,10 +267,10 @@
       <section class="site-section" aria-labelledby="boundary-title">
         <div class="section-heading">
           <div>
-            <p class="section-index">06 / Boundary</p>
-            <h2 id="boundary-title">Not another cloud drive.</h2>
+            <p class="section-index">07 / Boundary</p>
+            <h2 id="boundary-title">Not a cloud drive. Not a git repo.</h2>
           </div>
-          <p>Docbank is closer to a storage appliance with an evidence-aware retrieval layer: the operator owns the vault, its policy, and its recovery path.</p>
+          <p>Docbank is closer to a storage appliance with an evidence-aware intelligence layer: the operator owns the vault, its policy, and its recovery path.</p>
         </div>
         <div class="boundary-grid">
           <article class="boundary">
@@ -244,9 +279,14 @@
             <p>Identity, search, processing, and recovery are coupled to one provider account and its lifecycle.</p>
           </article>
           <article class="boundary">
+            <p class="choice-label">Git repository</p>
+            <h3>The ledger expects rewriting.</h3>
+            <p>Rebase and force-push rewrite history by design, identity follows paths, and large originals or AI derivatives overflow into bolt-on stores with no consent or provenance contract.</p>
+          </article>
+          <article class="boundary">
             <p class="choice-label">Docbank</p>
             <h3>The vault is the record.</h3>
-            <p>Storage locations, processors, and interfaces are replaceable participants around operator-controlled authority.</p>
+            <p>Storage locations, processors, and interfaces are replaceable participants around operator-controlled authority, including every AI-derived record.</p>
           </article>
         </div>
       </section>
@@ -254,7 +294,7 @@
       <section class="site-section" aria-labelledby="start-title">
         <div class="section-heading">
           <div>
-            <p class="section-index">07 / Start</p>
+            <p class="section-index">08 / Start</p>
             <h2 id="start-title">Follow one document through the system.</h2>
           </div>
           <div>

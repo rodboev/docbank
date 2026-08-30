@@ -85,6 +85,29 @@ Operators decide where it runs and which outputs become retained derivatives.
 - **None:** a document remains a complete authoritative record even when no
   derivative is produced.
 
+## AI understanding, on the record
+
+OCR output, renditions, chunks, embeddings, and vector indexes are records
+too: cataloged, fingerprinted, and bound to the exact source version that
+produced them.
+
+![One exact source version feeding governed rendition, chunk, embedding, and
+index derivatives that can be purged and rebuilt without touching the
+record](https://docbank.ai/assets/intelligence-pipeline.svg)
+
+- **Catalog derivatives:** renditions, chunk sets, embedding generations, and
+  vector indexes publish atomically into a durable catalog, each fingerprinted
+  against one immutable source version.
+- **Replace providers:** local, self-hosted, and hosted OCR and embedding
+  providers plug into standard bridges. Consent is durable and revocable, and
+  uploads bind to the exact inspected bytes.
+- **Rebuild intelligence:** purge, re-derive, and rebuild renditions,
+  embeddings, and indexes deterministically. Derivatives back up and restore
+  without any provider, and originals are never touched.
+- **Explain retrieval:** hybrid lexical and semantic search, with optional
+  expansion and reranking, explains each ranked result and keeps the document
+  and version behind it.
+
 ## One authority across every surface
 
 People, applications, and agents work through interfaces suited to the task.
@@ -100,15 +123,20 @@ They do not create separate copies of record.
 [Integrate an agent](/docs/agents/) or [inspect the HTTP
 contract](/docs/architecture/http-api/).
 
-## Not another cloud drive
+## Not a cloud drive. Not a git repo.
 
-Docbank is closer to a storage appliance with an evidence-aware retrieval
+Docbank is closer to a storage appliance with an evidence-aware intelligence
 layer: the operator owns the vault, its policy, and its recovery path.
 
 - **Cloud drive:** the service is the record. Identity, search, processing, and
   recovery are coupled to one provider account and its lifecycle.
+- **Git repository:** the ledger expects rewriting. Rebase and force-push
+  rewrite history by design, identity follows paths, and large originals or AI
+  derivatives overflow into bolt-on stores with no consent or provenance
+  contract.
 - **Docbank:** the vault is the record. Storage locations, processors, and
-  interfaces are replaceable participants around operator-controlled authority.
+  interfaces are replaceable participants around operator-controlled
+  authority, including every AI-derived record.
 
 ## Follow one document through the system
 
