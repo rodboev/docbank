@@ -10,6 +10,8 @@ internal/web/dist/*
 !internal/web/dist/.keep
 
 # docs build
+/.cache/docs-assets/
+/site/
 docs/.venv/
 docs/site/
 docs/zensical-public-docs.*

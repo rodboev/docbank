@@ -21,7 +21,7 @@ DEFAULT_GOLANGCI_LINT_CACHE := $(shell git rev-parse --path-format=absolute --gi
 GOLANGCI_LINT_CACHE ?= $(DEFAULT_GOLANGCI_LINT_CACHE)
 export GOLANGCI_LINT_CACHE
 
-.PHONY: build install clean test test-v release-scripts-test frontend frontend-test frontend-dev docs-screenshots fmt lint lint-ci tidy install-hooks docs-install docs-subpath-test docs-build docs-serve docs-link docs-deploy help
+.PHONY: build install clean test test-v release-scripts-test frontend frontend-test frontend-dev docs-screenshots fmt lint lint-ci tidy install-hooks docs-install docs-subpath-test docs-assets-test docs-assets-sync docs-build docs-serve docs-link docs-deploy help
 
 build: frontend
 	CGO_ENABLED=1 go build -tags "$(BUILD_TAGS)" -ldflags="$(LDFLAGS)" -o docbank ./cmd/docbank
@@ -99,7 +99,13 @@ docs-subpath-test:
 bridge-contract:
 	go test -tags fts5 ./document/bridge -run '^TestBridgeContractNormativeDocuments'
 
-docs-build: bridge-contract
+docs-assets-test:
+	bash scripts/docs-assets-sync.test.sh
+
+docs-assets-sync:
+	./scripts/sync-docs-assets.sh
+
+docs-build: bridge-contract docs-assets-sync
 	cd docs && ./zensical-docs.sh build
 
 docs-serve:
@@ -128,4 +134,4 @@ docs-deploy: docs-build
 	vercel deploy docs/site --prod --yes
 
 help:
-	@echo "Targets: build install clean test test-v release-scripts-test frontend frontend-test frontend-dev docs-screenshots fmt lint lint-ci tidy install-hooks docs-install docs-build docs-serve docs-link docs-deploy"
+	@echo "Targets: build install clean test test-v release-scripts-test frontend frontend-test frontend-dev docs-screenshots fmt lint lint-ci tidy install-hooks docs-install docs-subpath-test docs-assets-test docs-assets-sync docs-build docs-serve docs-link docs-deploy"
