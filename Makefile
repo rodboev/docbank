@@ -21,7 +21,7 @@ DEFAULT_GOLANGCI_LINT_CACHE := $(shell git rev-parse --path-format=absolute --gi
 GOLANGCI_LINT_CACHE ?= $(DEFAULT_GOLANGCI_LINT_CACHE)
 export GOLANGCI_LINT_CACHE
 
-.PHONY: build install clean test test-v release-scripts-test frontend frontend-test frontend-dev frontend-screenshots fmt lint lint-ci tidy install-hooks docs-install docs-build docs-serve docs-link docs-deploy help
+.PHONY: build install clean test test-v release-scripts-test frontend frontend-test frontend-dev frontend-screenshots fmt lint lint-ci tidy install-hooks docs-install docs-subpath-test docs-build docs-serve docs-link docs-deploy help
 
 build: frontend
 	CGO_ENABLED=1 go build -tags "$(BUILD_TAGS)" -ldflags="$(LDFLAGS)" -o docbank ./cmd/docbank
@@ -92,6 +92,9 @@ install-hooks:
 
 docs-install:
 	cd docs && uv sync --frozen
+
+docs-subpath-test:
+	cd docs && uv run --project . --frozen --no-dev python scripts/check_zensical_subpath.py
 
 bridge-contract:
 	go test -tags fts5 ./document/bridge -run '^TestBridgeContractNormativeDocuments'
