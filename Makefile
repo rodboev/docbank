@@ -109,7 +109,7 @@ docs-build: bridge-contract docs-subpath-test docs-assets-sync
 	node scripts/docs/build.mjs
 
 docs-serve:
-	cd docs && ./zensical-docs.sh serve
+	node scripts/docs/serve.mjs
 
 # Deploys use the operator's installed Vercel CLI; install it with
 # `npm install -g vercel` or from https://vercel.com/docs/cli.

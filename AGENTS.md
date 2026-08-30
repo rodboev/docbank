@@ -26,7 +26,14 @@ Instructions for autonomous coding agents working in this repository.
   its temporary synthetic vault and real daemon, never a developer vault or
   mocked API data. Generated images stay under `.superpowers/screenshots/`
   until they are visually inspected and published as a complete reviewed set.
-  Documentation builds consume that set and never generate screenshots.
+  Publish the complete set as one orphan `docs-assets` commit, then pin that
+  exact commit in `scripts/docs-assets.ref`. Documentation builds consume the
+  pin and never generate screenshots or follow a mutable branch head.
+- Run `make docs-serve` from the repository root to build, watch, and preview
+  the product page, authority guide, and operating documentation on one origin.
+  Run `make docs-build` after the final source or asset-pin edit. The strict
+  build stages only the explicit public allowlist into `site/`; internal plans,
+  scripts, and agent instructions must not enter the output.
 
 ## Private Data Boundary
 
