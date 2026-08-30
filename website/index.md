@@ -1,19 +1,28 @@
 # The system of record for documents your agents can use
 
-Docbank stores exact source bytes as authority. Governed processing adds
-searchable renditions and embeddings without turning a provider or index into
-the record.
+Docbank is a local-first, open-source document vault. Originals stay exact and
+authoritative while governed processing makes them searchable for people,
+systems, and agents.
 
-Docbank is local-first, open source, and usable through the CLI, web
-application, terminal interface, HTTP API, embedded Go package, and agent
-tooling.
+Docbank is usable through the CLI, web application, terminal interface, HTTP
+API, embedded Go package, and agent tooling.
 
 ## Install
 
-- [Install for macOS or Linux](/install.sh)
-- [Install for Windows](/install.ps1)
-- [Download the latest release archive](https://github.com/kenn-io/docbank/releases/latest)
-- [Follow the authority lifecycle](/guide/)
+On macOS or Linux:
+
+```sh
+curl -fsSL https://docbank.ai/install.sh | sh
+```
+
+On Windows:
+
+```powershell
+irm https://docbank.ai/install.ps1 | iex
+```
+
+Then [follow the authority lifecycle](/guide/) or read the
+[setup documentation](/docs/setup/).
 
 ## One record. Explicit states.
 

@@ -70,10 +70,8 @@ test("supports keyboard navigation and returns focus after the image dialog", as
   const skipLink = page.getByRole("link", { name: "Skip to content" });
   await skipLink.focus();
   await expect(skipLink).toBeFocused();
-  await page.keyboard.press("Tab");
-  if (browserName === "webkit") {
-    await expect(page.getByLabel("Download a release archive")).toBeFocused();
-  } else {
+  if (browserName !== "webkit") {
+    await page.keyboard.press("Tab");
     await expect(page.locator(".wordmark")).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(
@@ -91,21 +89,34 @@ test("supports keyboard navigation and returns focus after the image dialog", as
 });
 
 
-test("resolves release downloads only after interaction and keeps a stable fallback", async ({ page }) => {
-  let releaseRequests = 0;
-  await page.route("https://api.github.com/repos/kenn-io/docbank/releases/latest", async (route) => {
-    releaseRequests += 1;
-    await route.fulfill({ status: 503, body: "unavailable" });
-  });
+test("shows the documented install command with a Windows alternative", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "open all releases" })).toBeVisible();
-  expect(releaseRequests).toBe(0);
+  await expect(page.locator("[data-install-command] code")).toHaveText("curl -fsSL https://docbank.ai/install.sh | sh");
+  await expect(page.getByRole("link", { name: "Windows install" })).toBeVisible();
+});
 
-  await page.getByRole("button", { name: "Find archive" }).click();
-  const status = page.locator("[data-release-status]");
-  await expect(status).toContainText("could not be resolved");
-  await expect(status.getByRole("link", { name: "Open all releases" })).toBeVisible();
-  expect(releaseRequests).toBe(1);
+
+test("renders repository facts in the header when GitHub responds", async ({ page }) => {
+  await page.route("https://api.github.com/repos/kenn-io/docbank", (route) =>
+    route.fulfill({ json: { stargazers_count: 1280, forks_count: 34 } }),
+  );
+  await page.route("https://api.github.com/repos/kenn-io/docbank/releases/latest", (route) =>
+    route.fulfill({ json: { tag_name: "v0.4.0" } }),
+  );
+  await page.goto("/");
+  await expect(page.locator('[data-fact="stars"]')).toHaveText(/1\.3k/);
+  await expect(page.locator('[data-fact="forks"]')).toHaveText(/34/);
+  await expect(page.locator('[data-fact="version"]')).toHaveText(/v0\.4\.0/);
+});
+
+
+test("keeps a static header when the GitHub API is unavailable", async ({ page }) => {
+  await page.route("https://api.github.com/**", (route) => route.fulfill({ status: 503, body: "unavailable" }));
+  const settled = page.waitForResponse("https://api.github.com/repos/kenn-io/docbank");
+  await page.goto("/");
+  await settled;
+  await expect(page.getByRole("link", { name: /on GitHub/ })).toBeVisible();
+  await expect(page.locator("[data-facts]")).toBeHidden();
 });
 
 
@@ -115,7 +126,8 @@ test("keeps primary navigation usable at a narrow viewport", async ({ page }) =>
   const navigation = page.getByRole("navigation", { name: "Primary navigation" });
   await expect(navigation.getByRole("link", { name: "Guide" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "Docs" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "GitHub" })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: /on GitHub/ })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "Docbank Discord" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
@@ -124,7 +136,7 @@ test("honors reduced motion", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect.poll(() => page.locator("html").evaluate((element) => getComputedStyle(element).scrollBehavior)).toBe("auto");
-  const duration = await page.getByRole("link", { name: "Install for macOS or Linux" }).evaluate(
+  const duration = await page.getByRole("link", { name: "See how it works" }).evaluate(
     (element) => getComputedStyle(element).transitionDuration,
   );
   expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.00001);
@@ -147,11 +159,12 @@ test("keeps representative text and controls above contrast thresholds", async (
   await expectContrast(page.getByRole("heading", { level: 1 }), 3);
   await expectContrast(page.locator(".lede").first(), 4.5);
   await expectContrast(page.getByRole("link", { name: "Guide" }).first(), 4.5);
-  await expectContrast(page.getByRole("link", { name: "Install for macOS or Linux" }), 4.5);
+  await expectContrast(page.getByRole("link", { name: "See how it works" }), 4.5);
+  await expectContrast(page.locator("[data-install-command] code"), 4.5);
 
-  const platform = page.getByLabel("Download a release archive");
-  await platform.focus();
-  const focus = await platform.evaluate((element) => {
+  const copy = page.getByRole("button", { name: "Copy" });
+  await copy.focus();
+  const focus = await copy.evaluate((element) => {
     const style = getComputedStyle(element);
     return { outline: style.outlineColor, background: style.backgroundColor };
   });

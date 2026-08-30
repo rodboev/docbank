@@ -126,8 +126,7 @@ a:hover {
 
 .site-header nav,
 .footer-links,
-.actions,
-.download-row {
+.actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -144,6 +143,67 @@ a:hover {
   color: var(--text);
 }
 
+.sr-only {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  white-space: nowrap;
+  clip-path: inset(50%);
+  border: 0;
+}
+
+.repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.3rem;
+  border-radius: 3px;
+  font-family: var(--mono);
+}
+
+.site-header nav a.repo:hover {
+  background: var(--panel);
+}
+
+.repo > svg {
+  flex: 0 0 auto;
+}
+
+.repo-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  line-height: 1.2;
+}
+
+.repo-name {
+  font-size: 0.72rem;
+}
+
+.facts {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.64rem;
+}
+
+.facts[hidden],
+.fact[hidden] {
+  display: none;
+}
+
+.fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+}
+
+.icon-link {
+  display: inline-flex;
+}
+
 .wordmark,
 .eyebrow,
 .section-index,
@@ -151,8 +211,7 @@ a:hover {
 .proof-tag,
 .choice-label,
 code,
-kbd,
-.release-status {
+kbd {
   font-family: var(--mono);
 }
 
@@ -180,19 +239,25 @@ main {
 }
 
 .hero {
+  position: relative;
   padding: clamp(5rem, 12vw, 9rem) 0 clamp(4rem, 9vw, 7rem);
   border-bottom: 1px solid var(--rule);
 }
 
-.hero.compact {
-  padding-bottom: clamp(3rem, 7vw, 5rem);
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(42rem 26rem at 18% 8%, rgb(65 215 189 / 7%), transparent 70%);
+  pointer-events: none;
 }
 
-.hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 0.8fr);
-  gap: clamp(3rem, 8vw, 7rem);
-  align-items: end;
+.hero > * {
+  position: relative;
+}
+
+.hero.compact {
+  padding-bottom: clamp(3rem, 7vw, 5rem);
 }
 
 .eyebrow,
@@ -250,17 +315,52 @@ h3 {
   font-size: clamp(1.08rem, 2vw, 1.35rem);
 }
 
-.hero-note,
 .caption,
 .fine-print,
-.release-status {
+.install-hint {
   color: var(--muted);
   font-size: 0.88rem;
 }
 
-.hero-note {
-  padding-left: 1rem;
-  border-left: 2px solid var(--teal);
+.install-command {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.45rem 0.45rem 1.1rem;
+  border: 1px solid var(--rule);
+  background: var(--panel);
+}
+
+.install-command code {
+  color: var(--teal-strong);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+.install-command code::before {
+  color: var(--muted);
+  content: "$ ";
+}
+
+.install-hint {
+  margin-top: 0.75rem;
+}
+
+.install-hint [data-install-status]:not(:empty)::before {
+  content: " · ";
+}
+
+.hero-meta {
+  margin: 3rem 0 0;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
 }
 
 .actions {
@@ -268,8 +368,7 @@ h3 {
 }
 
 .button,
-button.button,
-select {
+button.button {
   min-height: 2.8rem;
   border: 1px solid var(--rule);
   border-radius: 3px;
@@ -305,12 +404,6 @@ button.button:hover {
 .button.primary:hover {
   color: var(--ink);
   background: var(--teal-strong);
-}
-
-select {
-  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
-  color: var(--text);
-  background: var(--panel);
 }
 
 .site-section {
@@ -440,28 +533,6 @@ dialog img {
 
 .interface-list span {
   color: var(--muted);
-}
-
-.download-panel {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  border: 1px solid var(--rule);
-  background: var(--panel);
-}
-
-.download-panel label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-}
-
-.release-status {
-  min-height: 1.5em;
-  margin: 0.75rem 0 0;
-}
-
-.release-status a {
-  margin-left: 0.4rem;
 }
 
 .guide-nav {
@@ -599,7 +670,6 @@ dialog img {
 }
 
 @media (max-width: 900px) {
-  .hero-grid,
   .section-heading,
   .interface-layout,
   .guide-stop {
@@ -640,6 +710,10 @@ dialog img {
   .site-header nav {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .repo-meta {
+    display: none;
   }
 
   h1 {
