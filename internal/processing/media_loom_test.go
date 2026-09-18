@@ -2,10 +2,13 @@ package processing
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -210,6 +213,30 @@ func TestRemoteRecordingVideoAdmission(t *testing.T) {
 	require.NoError(t, err)
 	_, err = service.MediaStatus(t.Context(), revoked.SourceID)
 	require.ErrorIs(t, err, store.ErrNotFound)
+	racing := loomRemoteForTest(t, service, "racing-video")
+	raceCtx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
+	defer cancel()
+	var wait sync.WaitGroup
+	importErr := make(chan error, 1)
+	wait.Go(func() {
+		_, importErrValue := service.ImportRecordingArtifact(raceCtx, MediaArtifactRequest{
+			OperationID: uuid.New().String(), SourceID: racing.SourceID, OccurrenceID: racing.OccurrenceID,
+			Kind: "media", Origin: "supplied", Filename: "racing-video.mp4", MediaType: "video/mp4",
+			SHA256: digest, ByteLength: int64(len(content)), Content: bytes.NewReader(content),
+		})
+		importErr <- importErrValue
+	})
+	revokeErr := make(chan error, 1)
+	wait.Go(func() {
+		_, revokeErrValue := service.RevokeMediaOccurrence(raceCtx, uuid.New().String(), racing.OccurrenceID, "1")
+		revokeErr <- revokeErrValue
+	})
+	wait.Wait()
+	require.NoError(t, <-revokeErr)
+	importResult := <-importErr
+	if importResult != nil {
+		require.True(t, errors.Is(importResult, store.ErrNotFound), importResult)
+	}
 
 	_, err = service.SubmitSuppliedMedia(t.Context(), SuppliedMediaRequest{
 		OperationID: uuid.New().String(), Content: bytes.NewReader(content), Filename: "loom.mp4",
