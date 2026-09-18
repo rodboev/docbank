@@ -37,6 +37,8 @@ type retainedTranscriptSource struct {
 	principal string
 }
 
+var errSuppliedInputInvalid = errors.New("supplied transcript bytes are invalid")
+
 func (source retainedTranscriptSource) Transcript(
 	ctx context.Context, sealedAudioSHA256 string,
 ) (document.SuppliedTranscript, error) {
@@ -103,7 +105,7 @@ func (source retainedTranscriptSource) readInput(
 		return nil, store.ContentVersion{}, err
 	}
 	if int64(len(raw)) != size || !utf8.Valid(raw) || strings.TrimSpace(string(raw)) == "" {
-		return nil, store.ContentVersion{}, errors.New("supplied transcript bytes are invalid")
+		return nil, store.ContentVersion{}, errSuppliedInputInvalid
 	}
 	return raw, version, nil
 }
@@ -134,6 +136,14 @@ func (source retainedTranscriptSource) CaptionForBinding(
 	}
 	raw, version, err := source.readInput(ctx, input)
 	if err != nil {
+		if errors.Is(err, errSuppliedInputInvalid) {
+			classified, classifyErr := document.NewRenditionProviderError(
+				document.RenditionErrorMalformedEvidence, 0, err)
+			if classifyErr != nil {
+				return suppliedtranscript.Caption{}, classifyErr
+			}
+			return suppliedtranscript.Caption{}, classified
+		}
 		return suppliedtranscript.Caption{}, err
 	}
 	mediaType, _, parseErr := mime.ParseMediaType(version.MimeType)

@@ -246,8 +246,9 @@ limited to 20 MiB, 2,088,960 coded pixels, 300,000 milliseconds, and 18,000
 frames. The inspector's MP4 byte ceiling, a 1080p-class coded frame, five
 minutes, and five minutes at 60 frames per second set these limits. The
 handler checks the envelope, declared size, and digest. The processing service
-checks the filename, MIME type, container, sample authority, and bounds before
-staging the file.
+checks the filename, MIME type, and declared size before staging the file. It
+then inspects the staged bytes for the container, sample authority, and media
+bounds.
 
 The service holds the application mutation gate before the Kit mutation lease.
 The store transaction then checks the caller, visible occurrence, remote

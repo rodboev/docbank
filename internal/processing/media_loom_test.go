@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"go.kenn.io/docbank/document"
 	"go.kenn.io/docbank/document/media/mediatest"
 	"go.kenn.io/docbank/internal/store"
 )
@@ -233,6 +234,33 @@ func TestSuppliedCaptionBindingsStayBySource(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, receipt.SuppliedInputID, bound)
 	}
+}
+
+func TestSuppliedCaptionInvalidBytesAreMalformed(t *testing.T) {
+	fixture := newPublicationFixture(t)
+	service := newRemoteRecordingTestService(t, fixture, "operator:loom-invalid-caption", 0, nil)
+	remote := loomRemoteForTest(t, service, "invalid-caption")
+	video := mediatest.H264AACMP4()
+	videoHash := processingSHA256(video)
+	_, err := service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+		OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
+		Kind: "media", Origin: "supplied", Provider: "loom", Filename: "loom.mp4", MediaType: "video/mp4",
+		SHA256: videoHash, ByteLength: int64(len(video)), Content: bytes.NewReader(video),
+	})
+	require.NoError(t, err)
+	invalid := []byte("1\n00:00:00,000 --> 00:00:01,000\ncaf\xe9\n")
+	caption, err := service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+		OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
+		Kind: "caption", Origin: "supplied", Provider: "loom", Filename: "loom.srt",
+		MediaType: "application/x-subrip", SHA256: processingSHA256(invalid),
+		ByteLength: int64(len(invalid)), Content: bytes.NewReader(invalid),
+	})
+	require.NoError(t, err)
+	source := retainedTranscriptSource{catalog: fixture.catalog, blobs: fixture.blobs, principal: service.principal}
+	_, err = source.CaptionForBinding(t.Context(), videoHash, caption.SuppliedInputID)
+	var providerErr *document.RenditionProviderError
+	require.ErrorAs(t, err, &providerErr)
+	assert.Equal(t, document.RenditionErrorMalformedEvidence, providerErr.Code())
 }
 
 func TestLoomCaptionProcessingRequiresConsentAndNoEgress(t *testing.T) {

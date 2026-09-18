@@ -1240,8 +1240,10 @@ through the HTTP or embedded API. MP4 uses the `.mp4` extension and
 `video/mp4`, with limits of 20 MiB, 2,088,960 coded pixels, 300,000
 milliseconds, and 18,000 frames. The original must be retained before a
 caption or transcript can be imported. Use `--kind caption --file
-CAPTIONS.srt --provider loom` for SubRip input, or `--kind transcript` for
-supplied transcript text. The receipt returns the input ID. Pass that value with
+CAPTIONS.srt --provider loom` for SubRip input, or `--kind transcript --file
+TRANSCRIPT.txt` for supplied transcript text. The fixed upload table maps
+`.mp4` to `video/mp4` and `.srt` to `application/x-subrip`. The receipt returns
+the input ID. Pass that value with
 `media retry --supplied-input-id INPUT_ID` when more than one transcript exists
 for the recording. The selected input remains fixed for the job; importing
 another transcript does not change work already queued.
