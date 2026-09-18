@@ -3,7 +3,10 @@ package processing
 import (
 	"bytes"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 	"uuid"
@@ -339,6 +342,14 @@ func TestLoomCaptionProcessingRequiresConsentAndNoEgress(t *testing.T) {
 		Gate: newWorkerTestGate(), SpoolDirectory: t.TempDir(), Principal: base.principal,
 		Profiles: map[string]ProfileConfig{name: profile}})
 	require.NoError(t, err)
+	var transport loomCountingTransport
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		transport.calls.Add(1)
+	}))
+	defer server.Close()
+	previousTransport := http.DefaultTransport
+	http.DefaultTransport = &transport
+	defer func() { http.DefaultTransport = previousTransport }()
 	version, err := fixture.catalog.ContentVersionByID(t.Context(), videoReceipt.ContentVersionID)
 	require.NoError(t, err)
 	plan, err := captionService.Plan(t.Context(), Selector{NodeID: version.NodeID,
@@ -357,6 +368,14 @@ func TestLoomCaptionProcessingRequiresConsentAndNoEgress(t *testing.T) {
 	_, err = captionService.GrantConsent(t.Context(), ConsentGrantRequest{Selector: Selector{
 		NodeID: version.NodeID, ContentVersionID: version.ID, Profile: name}, PlanFingerprint: plan.Fingerprint})
 	require.NoError(t, err)
+	queued, err := captionService.RetryMedia(t.Context(), uuid.New().String(), remote.SourceID,
+		MediaProcessingRequest{Profile: name, SuppliedInputID: caption.SuppliedInputID})
+	require.NoError(t, err)
+	runLoomRenditionJob(t, captionService, queued.JobID)
+	processed, err := captionService.MediaStatus(t.Context(), remote.SourceID)
+	require.NoError(t, err)
+	assert.Equal(t, "transcribed", processed.CoverageState)
+	assert.Zero(t, transport.calls.Load())
 	_, err = captionService.RevokeConsent(t.Context())
 	require.NoError(t, err)
 	_, err = captionService.RetryMedia(t.Context(), uuid.New().String(), remote.SourceID,
@@ -380,6 +399,14 @@ func TestLoomCoverageStaysTruthful(t *testing.T) {
 		SHA256: videoHash, ByteLength: int64(len(video)), Content: bytes.NewReader(video),
 	})
 	require.NoError(t, err)
+	var transport loomCountingTransport
+	server := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		transport.calls.Add(1)
+	}))
+	defer server.Close()
+	previousTransport := http.DefaultTransport
+	http.DefaultTransport = &transport
+	defer func() { http.DefaultTransport = previousTransport }()
 	status, err = service.MediaStatus(t.Context(), remote.SourceID)
 	require.NoError(t, err)
 	assert.Equal(t, "content_available", status.Outcome)
@@ -460,6 +487,13 @@ func runLoomRenditionJob(t *testing.T, service *Service, jobID string) {
 }
 
 type countingReader struct{ reads int }
+
+type loomCountingTransport struct{ calls atomic.Int64 }
+
+func (transport *loomCountingTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	transport.calls.Add(1)
+	return nil, io.EOF
+}
 
 func (reader *countingReader) Read(_ []byte) (int, error) { reader.reads++; return 0, io.EOF }
 
