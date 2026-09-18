@@ -125,23 +125,31 @@ func (service *Service) importRemoteRecordingMedia(
 	ctx context.Context, request MediaArtifactRequest, current store.MediaOccurrenceProjection,
 	operation store.MediaOperation,
 ) (MediaReceipt, error) {
-	if err := validateMediaArtifactFile(request.Filename, request.MediaType); err != nil {
+	video, err := validateRemoteRecordingFile(request.Filename, request.MediaType)
+	if err != nil {
 		return MediaReceipt{}, err
 	}
+	limit := service.mediaMaxBytes
+	if video {
+		limit = min(limit, remoteVideoMaxBytes)
+	}
+	if request.ByteLength > limit {
+		return MediaReceipt{}, errors.New("byte_limit")
+	}
 	staged, owned, err := service.mediaStagedContent(ctx, request.Content, request.ByteLength,
-		service.mediaMaxBytes, request.SHA256)
+		limit, request.SHA256)
 	if err != nil {
 		return MediaReceipt{}, err
 	}
 	if owned {
 		defer func() { _ = staged.Close() }()
 	}
-	record, err := media.InspectCapability(staged, mediaInspectionPolicyForFile(request.Filename,
-		request.MediaType, request.SHA256, request.ByteLength, service.mediaMaxBytes))
+	record, err := media.InspectCapability(staged, remoteRecordingInspectionPolicy(request.Filename,
+		request.MediaType, request.SHA256, request.ByteLength, service.mediaMaxBytes, video))
 	if err != nil {
 		return MediaReceipt{}, err
 	}
-	if !record.Eligible || (record.Format != "wav" && record.Format != "mp3") {
+	if !remoteRecordingFormatAdmitted(record, video) {
 		return MediaReceipt{}, fmt.Errorf("unqualified_codec: %s", record.Reason)
 	}
 	if err := staged.rewind(); err != nil {
