@@ -3,7 +3,9 @@ package api_test
 import (
 	"bytes"
 	"context"
+	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -131,4 +133,58 @@ func TestLoomManualExportHTTP(t *testing.T) {
 	require.NoError(t, catalog.ExportMetadata(t.Context(), &metadata))
 	assert.Contains(t, metadata.String(), `"provider":"loom"`)
 	assert.NotContains(t, metadata.String(), "synthloom-http")
+}
+
+func TestLoomManualExportHTTPRejectsOversizeVideoBeforeStaging(t *testing.T) {
+	blockedSpool := filepath.Join(t.TempDir(), "spool-file")
+	require.NoError(t, os.WriteFile(blockedSpool, []byte("not a directory"), 0o600))
+	ts, _ := newTestServer(t, func(deps *api.Deps) {
+		gate := api.NewOperationGate()
+		deps.Gate = gate
+		service, err := processing.NewService(processing.ServiceConfig{
+			Catalog: deps.Store, Blobs: deps.Blobs, Gate: gate,
+			SpoolDirectory: blockedSpool, Principal: "daemon:operator",
+		})
+		require.NoError(t, err)
+		deps.Processing = service
+	})
+	client := daemonconn.New(ts.URL, testAPIKey)
+	remote, err := client.SubmitRemoteRecording(t.Context(), api.MediaReferenceBody{
+		OperationID: "00000000-0000-4000-8000-000000000556", ReferenceURL: "https://private.invalid/loom-oversize",
+		CanonicalURL: "https://www.loom.com/share/synthloom-oversize", Acquire: true,
+		Occurrence: api.MediaOccurrenceBody{Ref: "loom-oversize", Revision: "1", Filename: "loom.mp4"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "unsupported", remote.Outcome)
+
+	_, err = client.ImportMediaArtifact(t.Context(), remote.SourceID, api.MediaArtifactMetadata{
+		OperationID: "00000000-0000-4000-8000-000000000557", OccurrenceID: remote.OccurrenceID,
+		Kind: "media", Origin: "supplied", Provider: "loom", Filename: "loom.mp4", MediaType: "video/mp4",
+		SHA256: strings.Repeat("0", 64), ByteLength: 20<<20 + 1,
+	}, bytes.NewReader(nil))
+	require.ErrorContains(t, err, "byte_limit")
+}
+
+func TestLoomManualExportHTTPReplaysArtifactAfterRevocation(t *testing.T) {
+	ts, _ := newTestServer(t, configureLoomManualTestService(t))
+	client := daemonconn.New(ts.URL, testAPIKey)
+	remote, err := client.SubmitRemoteRecording(t.Context(), api.MediaReferenceBody{
+		OperationID: "00000000-0000-4000-8000-000000000558", ReferenceURL: "https://private.invalid/loom-replay",
+		CanonicalURL: "https://www.loom.com/share/synthloom-replay", Acquire: true,
+		Occurrence: api.MediaOccurrenceBody{Ref: "loom-replay", Revision: "1", Filename: "loom.mp4"},
+	})
+	require.NoError(t, err)
+	video := mediatest.H264AACMP4()
+	metadata := api.MediaArtifactMetadata{OperationID: "00000000-0000-4000-8000-000000000559",
+		OccurrenceID: remote.OccurrenceID, Kind: "media", Origin: "supplied", Provider: "loom",
+		Filename: "loom.mp4", MediaType: "video/mp4", SHA256: processingTestHash(string(video)), ByteLength: int64(len(video))}
+	first, err := client.ImportMediaArtifact(t.Context(), remote.SourceID, metadata, bytes.NewReader(video))
+	require.NoError(t, err)
+	_, err = client.RevokeMediaOccurrence(t.Context(), remote.OccurrenceID, api.MediaOccurrenceRevokeBody{
+		OperationID: "00000000-0000-4000-8000-000000000560", Revision: "1"})
+	require.NoError(t, err)
+	replay, err := client.ImportMediaArtifact(t.Context(), remote.SourceID, metadata, bytes.NewReader(video))
+	require.NoError(t, err)
+	require.Equal(t, first.ContentVersionID, replay.ContentVersionID)
+	require.Equal(t, first.OperationID, replay.OperationID)
 }
