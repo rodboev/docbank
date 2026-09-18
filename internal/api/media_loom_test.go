@@ -81,6 +81,12 @@ func TestLoomManualExportHTTP(t *testing.T) {
 	require.NoError(t, err)
 	selector := api.ProcessingSelector{NodeID: version.NodeID, ContentVersionID: version.ID,
 		Profile: processing.SuppliedCaptionProfileName}
+	before, err := client.SearchDocuments(t.Context(), api.DocumentSearchRequest{
+		Query: "http second cue", Mode: "lexical", Profile: processing.SuppliedCaptionProfileName, Limit: 10,
+		Fence: api.DocumentSourceFence{VaultUID: catalog.VaultID(), ContentVersionIDs: []string{original.ContentVersionID}},
+	})
+	require.NoError(t, err)
+	assert.Empty(t, before.Results)
 	plan, err := client.API().PlanDocumentProcessing(t.Context(), &apiclient.PlanDocumentProcessingRequestOptions{
 		Body: &api.ProcessingPlanRequest{Selector: selector}})
 	require.NoError(t, err)
@@ -92,6 +98,11 @@ func TestLoomManualExportHTTP(t *testing.T) {
 		Processing:  &api.MediaProcessingBody{Profile: processing.SuppliedCaptionProfileName, SuppliedInputID: caption.SuppliedInputID},
 	})
 	require.NoError(t, err)
+	_, err = client.RetryMedia(t.Context(), remote.SourceID, api.MediaRetryBody{
+		OperationID: "00000000-0000-4000-8000-000000000555",
+		Processing:  &api.MediaProcessingBody{Profile: processing.SuppliedMediaProfileName, SuppliedInputID: caption.SuppliedInputID},
+	})
+	require.Error(t, err)
 	require.Equal(t, "queued", queued.OperationState)
 
 	var status api.MediaReceipt
@@ -109,6 +120,12 @@ func TestLoomManualExportHTTP(t *testing.T) {
 	require.Equal(t, original.ContentVersionID, results.Results[0].ContentVersionID)
 	assert.Equal(t, int64(2_500), results.Results[0].Evidence[0].TimeSpan.StartMS)
 	assert.Equal(t, int64(4_125), results.Results[0].Evidence[0].TimeSpan.EndMS)
+	stream, err := client.RenditionForSelector(t.Context(), selector, 1<<20)
+	require.NoError(t, err)
+	var rendition bytes.Buffer
+	_, err = stream.CopyVerified(&rendition)
+	require.NoError(t, err)
+	assert.Contains(t, rendition.String(), "http second cue")
 
 	var metadata bytes.Buffer
 	require.NoError(t, catalog.ExportMetadata(t.Context(), &metadata))
