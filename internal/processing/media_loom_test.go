@@ -231,6 +231,7 @@ func TestSuppliedCaptionBindingsStayBySource(t *testing.T) {
 	second := loomRemoteForTest(t, service, "caption-b")
 	content := mediatest.H264AACMP4()
 	mediaReceipts := make([]MediaReceipt, 2)
+	captionIDs := make([]string, 2)
 	var err error
 	for index, remote := range []MediaReceipt{first, second} {
 		hash := processingSHA256(content)
@@ -249,6 +250,7 @@ func TestSuppliedCaptionBindingsStayBySource(t *testing.T) {
 			MediaType: "application/x-subrip", SHA256: processingSHA256(srt), ByteLength: int64(len(srt)), Content: bytes.NewReader(srt),
 		})
 		require.NoError(t, err)
+		captionIDs[index] = receipt.SuppliedInputID
 		sourceID, sourceVersionID, err := fixture.catalog.MediaSourceBindingForContentVersion(
 			t.Context(), service.principal, mediaReceipts[index].ContentVersionID)
 		require.NoError(t, err)
@@ -276,11 +278,11 @@ func TestSuppliedCaptionBindingsStayBySource(t *testing.T) {
 	require.NoError(t, err)
 	_, err = service.resolveMediaInputBinding(t.Context(), SuppliedCaptionProfileName,
 		processingSHA256(content), mediaSourceBinding{sourceID: first.SourceID, sourceVersionID: mediaReceipts[0].SourceVersionID},
-		mediaReceipts[0].SourceVersionID)
+		captionIDs[0])
 	require.ErrorIs(t, err, store.ErrNotFound)
 	_, err = service.resolveMediaInputBinding(t.Context(), SuppliedCaptionProfileName,
 		processingSHA256(content), mediaSourceBinding{sourceID: second.SourceID, sourceVersionID: mediaReceipts[1].SourceVersionID},
-		"")
+		captionIDs[1])
 	require.NoError(t, err)
 }
 

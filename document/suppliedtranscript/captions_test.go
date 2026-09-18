@@ -90,7 +90,7 @@ func TestCaptionProviderRejects(t *testing.T) {
 }
 
 func TestCaptionProviderSupportsWAVAndRejectsStaleProof(t *testing.T) {
-	provider, upload, authorization := newCaptionFixture(t, mediatest.MP3(), "audio/mpeg")
+	provider, upload, authorization := newCaptionFixture(t, mediatest.WAV(), "audio/wav")
 	provider.source = &captionStub{caption: Caption{Provider: "loom", SRT: []byte(
 		"1\n00:00:00,000 --> 00:00:00,005\naudio cue\n")}}
 	result, err := provider.Render(t.Context(), upload, authorization)

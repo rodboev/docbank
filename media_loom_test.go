@@ -30,7 +30,7 @@ func TestLoomCaptionSearchHonorsExactFence(t *testing.T) {
 		phrase           string
 		occurrenceID     string
 	}
-	publish := func(ref, phrase string) published {
+	publish := func(ref, phrase, start, end string) published {
 		remote, submitErr := vault.SubmitRemoteRecording(t.Context(), RemoteRecordingRequest{
 			OperationID: uuid.New().String(), ReferenceURL: "https://private.invalid/" + ref,
 			CanonicalURL: "https://www.loom.com/share/" + ref,
@@ -45,7 +45,7 @@ func TestLoomCaptionSearchHonorsExactFence(t *testing.T) {
 			SHA256: videoID.SHA256, ByteLength: videoID.Size, Content: bytes.NewReader(video),
 		})
 		require.NoError(t, importErr)
-		srt := []byte("1\n00:00:01,000 --> 00:00:02,000\n" + phrase + "\n")
+		srt := []byte("1\n" + start + " --> " + end + "\n" + phrase + "\n")
 		captionID := contentIdentity(srt)
 		caption, importErr := vault.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
 			OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
@@ -69,8 +69,8 @@ func TestLoomCaptionSearchHonorsExactFence(t *testing.T) {
 		return published{remote: remote, original: original, selector: selector, phrase: phrase,
 			occurrenceID: remote.OccurrenceID}
 	}
-	first := publish("fence-a", "shared fence phrase")
-	second := publish("fence-b", "shared fence phrase")
+	first := publish("fence-a", "shared fence phrase", "00:00:01,000", "00:00:02,000")
+	second := publish("fence-b", "shared fence phrase", "00:00:03,000", "00:00:04,000")
 	for _, item := range []published{first, second} {
 		require.Eventually(t, func() bool {
 			status, statusErr := vault.MediaStatus(t.Context(), item.remote.SourceID)
@@ -92,6 +92,7 @@ func TestLoomCaptionSearchHonorsExactFence(t *testing.T) {
 	assert.Equal(t, first.original.ContentVersionID, firstResults.Results[0].ContentVersionID)
 	assert.Equal(t, second.original.ContentVersionID, secondResults.Results[0].ContentVersionID)
 	assert.Equal(t, &MediaTimeSpan{StartMS: 1_000, EndMS: 2_000}, searchSpan(firstResults.Results[0]))
+	assert.Equal(t, &MediaTimeSpan{StartMS: 3_000, EndMS: 4_000}, searchSpan(secondResults.Results[0]))
 	foreign, err := vault.SearchDocuments(t.Context(), DocumentSearchRequest{
 		Query: first.phrase, Mode: DocumentSearchLexical, Profile: "supplied-captions", Limit: 10,
 		Fence: DocumentSourceFence{VaultUID: vault.ID(), ContentVersionIDs: []string{"00000000-0000-4000-8000-000000000001"}},
