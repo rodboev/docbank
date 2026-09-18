@@ -5,6 +5,7 @@ import (
 	"io"
 	"testing"
 	"time"
+	"uuid"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,95 @@ func TestLoomManualExportEmbedded(t *testing.T) {
 }
 
 func TestLoomCaptionSearchHonorsExactFence(t *testing.T) {
-	runLoomManualExportEmbedded(t)
+	vault, err := New(t.Context(), Config{Root: t.TempDir()})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, vault.Close()) })
+	type published struct {
+		remote, original MediaReceipt
+		selector         ProcessingSelector
+		phrase           string
+		occurrenceID     string
+	}
+	publish := func(ref, phrase string) published {
+		remote, submitErr := vault.SubmitRemoteRecording(t.Context(), RemoteRecordingRequest{
+			OperationID: uuid.New().String(), ReferenceURL: "https://private.invalid/" + ref,
+			CanonicalURL: "https://www.loom.com/share/" + ref,
+			Occurrence:   MediaOccurrenceInput{Ref: ref, Revision: "1", Filename: "loom.mp4"},
+		})
+		require.NoError(t, submitErr)
+		video := mediatest.H264AACMP4()
+		videoID := contentIdentity(video)
+		original, importErr := vault.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+			OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
+			Kind: "media", Origin: "supplied", Provider: "loom", Filename: "loom.mp4", MediaType: "video/mp4",
+			SHA256: videoID.SHA256, ByteLength: videoID.Size, Content: bytes.NewReader(video),
+		})
+		require.NoError(t, importErr)
+		srt := []byte("1\n00:00:01,000 --> 00:00:02,000\n" + phrase + "\n")
+		captionID := contentIdentity(srt)
+		caption, importErr := vault.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+			OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
+			Kind: "caption", Origin: "supplied", Provider: "loom", Filename: "loom.srt",
+			MediaType: "application/x-subrip", SHA256: captionID.SHA256, ByteLength: captionID.Size,
+			Content: bytes.NewReader(srt),
+		})
+		require.NoError(t, importErr)
+		node, statErr := vault.Stat(t.Context(), "/media/"+remote.SourceID+"/"+videoID.SHA256+".mp4")
+		require.NoError(t, statErr)
+		selector := ProcessingSelector{NodeID: node.ID, ContentVersionID: original.ContentVersionID,
+			Profile: "supplied-captions"}
+		plan, planErr := vault.PlanProcessing(t.Context(), ProcessingPlanRequest{Selector: selector})
+		require.NoError(t, planErr)
+		_, grantErr := vault.GrantProcessingPlanConsent(t.Context(), ProcessingConsentGrantRequest{
+			PlanRequest: ProcessingPlanRequest{Selector: selector}, PlanFingerprint: plan.Fingerprint})
+		require.NoError(t, grantErr)
+		_, retryErr := vault.RetryMedia(t.Context(), uuid.New().String(), remote.SourceID,
+			MediaProcessingRequest{Profile: "supplied-captions", SuppliedInputID: caption.SuppliedInputID})
+		require.NoError(t, retryErr)
+		return published{remote: remote, original: original, selector: selector, phrase: phrase,
+			occurrenceID: remote.OccurrenceID}
+	}
+	first := publish("fence-a", "shared fence phrase")
+	second := publish("fence-b", "shared fence phrase")
+	for _, item := range []published{first, second} {
+		require.Eventually(t, func() bool {
+			status, statusErr := vault.MediaStatus(t.Context(), item.remote.SourceID)
+			return statusErr == nil && status.OperationState == "succeeded" && status.CoverageState == "transcribed"
+		}, 30*time.Second, 20*time.Millisecond)
+	}
+	search := func(versionID string) DocumentSearchReport {
+		results, searchErr := vault.SearchDocuments(t.Context(), DocumentSearchRequest{
+			Query: first.phrase, Mode: DocumentSearchLexical, Profile: "supplied-captions", Limit: 10,
+			Fence: DocumentSourceFence{VaultUID: vault.ID(), ContentVersionIDs: []string{versionID}},
+		})
+		require.NoError(t, searchErr)
+		return results
+	}
+	firstResults := search(first.original.ContentVersionID)
+	secondResults := search(second.original.ContentVersionID)
+	require.Len(t, firstResults.Results, 1)
+	require.Len(t, secondResults.Results, 1)
+	assert.Equal(t, first.original.ContentVersionID, firstResults.Results[0].ContentVersionID)
+	assert.Equal(t, second.original.ContentVersionID, secondResults.Results[0].ContentVersionID)
+	assert.Equal(t, &MediaTimeSpan{StartMS: 1_000, EndMS: 2_000}, searchSpan(firstResults.Results[0]))
+	foreign, err := vault.SearchDocuments(t.Context(), DocumentSearchRequest{
+		Query: first.phrase, Mode: DocumentSearchLexical, Profile: "supplied-captions", Limit: 10,
+		Fence: DocumentSourceFence{VaultUID: vault.ID(), ContentVersionIDs: []string{"00000000-0000-4000-8000-000000000001"}},
+	})
+	require.NoError(t, err)
+	assert.Empty(t, foreign.Results)
+	_, err = vault.DeclareMediaOccurrence(t.Context(), uuid.New().String(), first.remote.SourceID,
+		MediaOccurrenceInput{Ref: "fence-a-survivor", Revision: "1", Filename: "loom.mp4"})
+	require.NoError(t, err)
+	_, err = vault.RevokeMediaOccurrence(t.Context(), uuid.New().String(), first.occurrenceID, "1")
+	require.NoError(t, err)
+	status, err := vault.MediaStatus(t.Context(), first.remote.SourceID)
+	require.NoError(t, err)
+	assert.Equal(t, "stale", status.CoverageState)
+	_, err = vault.Rendition(t.Context(), RenditionRequest{Selector: first.selector})
+	require.ErrorIs(t, err, ErrNotFound)
+	assert.Empty(t, search(first.original.ContentVersionID).Results)
+	assert.Len(t, search(second.original.ContentVersionID).Results, 1)
 }
 
 func runLoomManualExportEmbedded(t *testing.T) {

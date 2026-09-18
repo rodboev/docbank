@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 	"uuid"
 
 	"github.com/stretchr/testify/assert"
@@ -183,6 +184,28 @@ func TestRemoteRecordingVideoAdmission(t *testing.T) {
 			require.Error(t, err)
 		})
 	}
+	noAuthority := loomRemoteForTest(t, service, "no-authority")
+	noAuthorityBytes := mediatest.MP4(64, 48, 1000)
+	_, err = service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+		OperationID: uuid.New().String(), SourceID: noAuthority.SourceID, OccurrenceID: noAuthority.OccurrenceID,
+		Kind: "media", Origin: "supplied", Filename: "no-authority.mp4", MediaType: "video/mp4",
+		SHA256: processingSHA256(noAuthorityBytes), ByteLength: int64(len(noAuthorityBytes)),
+		Content: bytes.NewReader(noAuthorityBytes),
+	})
+	require.Error(t, err)
+
+	revoked := loomRemoteForTest(t, service, "revoked-video")
+	revokedHash := processingSHA256(content)
+	_, err = service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+		OperationID: uuid.New().String(), SourceID: revoked.SourceID, OccurrenceID: revoked.OccurrenceID,
+		Kind: "media", Origin: "supplied", Filename: "revoked-video.mp4", MediaType: "video/mp4",
+		SHA256: revokedHash, ByteLength: int64(len(content)), Content: bytes.NewReader(content),
+	})
+	require.NoError(t, err)
+	_, err = service.RevokeMediaOccurrence(t.Context(), uuid.New().String(), revoked.OccurrenceID, "1")
+	require.NoError(t, err)
+	_, err = service.MediaStatus(t.Context(), revoked.SourceID)
+	require.ErrorIs(t, err, store.ErrNotFound)
 
 	_, err = service.SubmitSuppliedMedia(t.Context(), SuppliedMediaRequest{
 		OperationID: uuid.New().String(), Content: bytes.NewReader(content), Filename: "loom.mp4",
@@ -234,6 +257,31 @@ func TestSuppliedCaptionBindingsStayBySource(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, receipt.SuppliedInputID, bound)
 	}
+	transcript := []byte("legacy transcript")
+	transcriptReceipt, err := service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+		OperationID: uuid.New().String(), SourceID: first.SourceID, OccurrenceID: first.OccurrenceID,
+		Kind: "transcript", Origin: "supplied", Filename: "loom.txt", MediaType: "text/plain",
+		SHA256: processingSHA256(transcript), ByteLength: int64(len(transcript)), Content: bytes.NewReader(transcript),
+	})
+	require.NoError(t, err)
+	_, err = service.resolveMediaInputBinding(t.Context(), SuppliedMediaProfileName,
+		processingSHA256(content), mediaSourceBinding{sourceID: first.SourceID, sourceVersionID: mediaReceipts[0].SourceVersionID},
+		transcriptReceipt.SuppliedInputID)
+	require.NoError(t, err)
+	_, err = service.resolveMediaInputBinding(t.Context(), SuppliedCaptionProfileName,
+		processingSHA256(content), mediaSourceBinding{sourceID: first.SourceID, sourceVersionID: mediaReceipts[0].SourceVersionID},
+		transcriptReceipt.SuppliedInputID)
+	require.ErrorIs(t, err, store.ErrNotFound)
+	_, err = service.RevokeMediaOccurrence(t.Context(), uuid.New().String(), first.OccurrenceID, "1")
+	require.NoError(t, err)
+	_, err = service.resolveMediaInputBinding(t.Context(), SuppliedCaptionProfileName,
+		processingSHA256(content), mediaSourceBinding{sourceID: first.SourceID, sourceVersionID: mediaReceipts[0].SourceVersionID},
+		mediaReceipts[0].SourceVersionID)
+	require.ErrorIs(t, err, store.ErrNotFound)
+	_, err = service.resolveMediaInputBinding(t.Context(), SuppliedCaptionProfileName,
+		processingSHA256(content), mediaSourceBinding{sourceID: second.SourceID, sourceVersionID: mediaReceipts[1].SourceVersionID},
+		"")
+	require.NoError(t, err)
 }
 
 func TestSuppliedCaptionInvalidBytesAreMalformed(t *testing.T) {
@@ -269,7 +317,7 @@ func TestLoomCaptionProcessingRequiresConsentAndNoEgress(t *testing.T) {
 	remote := loomRemoteForTest(t, base, "consent")
 	video := mediatest.H264AACMP4()
 	videoHash := processingSHA256(video)
-	_, err := base.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+	videoReceipt, err := base.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
 		OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
 		Kind: "media", Origin: "supplied", Provider: "loom", Filename: "loom.mp4", MediaType: "video/mp4",
 		SHA256: videoHash, ByteLength: int64(len(video)), Content: bytes.NewReader(video),
@@ -288,6 +336,14 @@ func TestLoomCaptionProcessingRequiresConsentAndNoEgress(t *testing.T) {
 		Gate: newWorkerTestGate(), SpoolDirectory: t.TempDir(), Principal: base.principal,
 		Profiles: map[string]ProfileConfig{name: profile}})
 	require.NoError(t, err)
+	version, err := fixture.catalog.ContentVersionByID(t.Context(), videoReceipt.ContentVersionID)
+	require.NoError(t, err)
+	plan, err := captionService.Plan(t.Context(), Selector{NodeID: version.NodeID,
+		ContentVersionID: version.ID, Profile: name})
+	require.NoError(t, err)
+	require.Len(t, plan.Flow, 1)
+	assert.Equal(t, string(document.RenditionTrustLocalProcess), plan.Flow[0].TrustBoundary)
+	assert.Equal(t, "in-process", plan.Flow[0].RuntimeDisclosure.Endpoint)
 	_, err = captionService.RetryMedia(t.Context(), uuid.New().String(), remote.SourceID,
 		MediaProcessingRequest{Profile: name, SuppliedInputID: caption.SuppliedInputID})
 	require.Error(t, err)
@@ -295,6 +351,14 @@ func TestLoomCaptionProcessingRequiresConsentAndNoEgress(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "content_available", status.Outcome)
 	assert.Equal(t, "unprocessed", status.CoverageState)
+	_, err = captionService.GrantConsent(t.Context(), ConsentGrantRequest{Selector: Selector{
+		NodeID: version.NodeID, ContentVersionID: version.ID, Profile: name}, PlanFingerprint: plan.Fingerprint})
+	require.NoError(t, err)
+	_, err = captionService.RevokeConsent(t.Context())
+	require.NoError(t, err)
+	_, err = captionService.RetryMedia(t.Context(), uuid.New().String(), remote.SourceID,
+		MediaProcessingRequest{Profile: name, SuppliedInputID: caption.SuppliedInputID})
+	require.Error(t, err)
 }
 
 func TestLoomCoverageStaysTruthful(t *testing.T) {
@@ -307,7 +371,7 @@ func TestLoomCoverageStaysTruthful(t *testing.T) {
 	assert.Equal(t, "unprocessed", status.CoverageState)
 	video := mediatest.H264AACMP4()
 	videoHash := processingSHA256(video)
-	_, err = service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+	videoReceipt, err := service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
 		OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
 		Kind: "media", Origin: "supplied", Provider: "loom", Filename: "loom.mp4", MediaType: "video/mp4",
 		SHA256: videoHash, ByteLength: int64(len(video)), Content: bytes.NewReader(video),
@@ -328,6 +392,68 @@ func TestLoomCoverageStaysTruthful(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "content_available", status.Outcome)
 	assert.Equal(t, "unprocessed", status.CoverageState)
+	invalid := []byte("1\n00:00:00,000 --> 00:00:01,000\ncaf\xe9\n")
+	badCaption, err := service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+		OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
+		Kind: "caption", Origin: "supplied", Provider: "loom", Filename: "bad.srt",
+		MediaType: "application/x-subrip", SHA256: processingSHA256(invalid),
+		ByteLength: int64(len(invalid)), Content: bytes.NewReader(invalid),
+	})
+	require.NoError(t, err)
+	name, profile, err := NewSuppliedCaptionProfile(fixture.catalog, fixture.blobs, service.principal)
+	require.NoError(t, err)
+	captionService, err := NewService(ServiceConfig{Catalog: fixture.catalog, Blobs: fixture.blobs,
+		Gate: newWorkerTestGate(), SpoolDirectory: t.TempDir(), Principal: service.principal,
+		Profiles: map[string]ProfileConfig{name: profile}})
+	require.NoError(t, err)
+	version, err := fixture.catalog.ContentVersionByID(t.Context(), videoReceipt.ContentVersionID)
+	require.NoError(t, err)
+	selector := Selector{NodeID: version.NodeID, ContentVersionID: version.ID, Profile: name}
+	plan, err := captionService.Plan(t.Context(), selector)
+	require.NoError(t, err)
+	_, err = captionService.GrantConsent(t.Context(), ConsentGrantRequest{Selector: selector, PlanFingerprint: plan.Fingerprint})
+	require.NoError(t, err)
+	queued, err := captionService.RetryMedia(t.Context(), uuid.New().String(), remote.SourceID,
+		MediaProcessingRequest{Profile: name, SuppliedInputID: badCaption.SuppliedInputID})
+	require.NoError(t, err)
+	runLoomRenditionJob(t, captionService, queued.JobID)
+	failed, err := captionService.MediaStatus(t.Context(), remote.SourceID)
+	require.NoError(t, err)
+	assert.Equal(t, "failed", failed.OperationState)
+	assert.Equal(t, "unavailable", failed.CoverageState)
+	valid := []byte("1\n00:00:00,000 --> 00:00:01,000\ncoverage cue\n")
+	goodCaption, err := service.ImportRecordingArtifact(t.Context(), MediaArtifactRequest{
+		OperationID: uuid.New().String(), SourceID: remote.SourceID, OccurrenceID: remote.OccurrenceID,
+		Kind: "caption", Origin: "supplied", Provider: "loom", Filename: "good.srt",
+		MediaType: "application/x-subrip", SHA256: processingSHA256(valid),
+		ByteLength: int64(len(valid)), Content: bytes.NewReader(valid),
+	})
+	require.NoError(t, err)
+	queued, err = captionService.RetryMedia(t.Context(), uuid.New().String(), remote.SourceID,
+		MediaProcessingRequest{Profile: name, SuppliedInputID: goodCaption.SuppliedInputID})
+	require.NoError(t, err)
+	runLoomRenditionJob(t, captionService, queued.JobID)
+	succeeded, err := captionService.MediaStatus(t.Context(), remote.SourceID)
+	require.NoError(t, err)
+	assert.Equal(t, "succeeded", succeeded.OperationState)
+	assert.Equal(t, "transcribed", succeeded.CoverageState)
+}
+
+func runLoomRenditionJob(t *testing.T, service *Service, jobID string) {
+	t.Helper()
+	waiter, err := service.catalog.RenditionJobWaiterByID(t.Context(), jobID)
+	require.NoError(t, err)
+	worker, err := NewRenditionWorker(RenditionWorkerConfig{
+		Catalog: service.catalog, Blobs: service.blobs, Runtime: service.RenditionRuntimes(),
+		Gate: newWorkerTestGate(), Owner: "loom-coverage-worker", LeaseDuration: time.Minute,
+		IdleDelay: time.Millisecond,
+	})
+	require.NoError(t, err)
+	_, err = worker.RunJob(t.Context(), waiter.JobID)
+	require.NoError(t, err)
+	continuation := &MediaContinuationWorker{Service: service, IdleDelay: time.Millisecond}
+	_, err = continuation.RunOne(t.Context())
+	require.NoError(t, err)
 }
 
 type countingReader struct{ reads int }

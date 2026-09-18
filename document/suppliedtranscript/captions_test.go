@@ -89,6 +89,25 @@ func TestCaptionProviderRejects(t *testing.T) {
 	}
 }
 
+func TestCaptionProviderSupportsWAVAndRejectsStaleProof(t *testing.T) {
+	provider, upload, authorization := newCaptionFixture(t, mediatest.MP3(), "audio/mpeg")
+	provider.source = &captionStub{caption: Caption{Provider: "loom", SRT: []byte(
+		"1\n00:00:00,000 --> 00:00:00,005\naudio cue\n")}}
+	result, err := provider.Render(t.Context(), upload, authorization)
+	require.NoError(t, err)
+	assert.Equal(t, "audio", result.Evidence.Family)
+
+	authorization.CapabilityRecordChecksum = strings.Repeat("f", 64)
+	_, err = provider.Render(t.Context(), upload, authorization)
+	assertCaptionCode(t, err, document.RenditionErrorPolicyRejected)
+
+	facts, _ := upload.proof.Facts()
+	authorization.CapabilityRecordChecksum = facts.Checksum
+	authorization.MaxArtifactBytes = 1
+	_, err = provider.Render(t.Context(), upload, authorization)
+	assertCaptionCode(t, err, document.RenditionErrorMalformedEvidence)
+}
+
 type captionStub struct {
 	caption  Caption
 	err      error
@@ -127,8 +146,9 @@ func newCaptionFixture(
 		Source: &captionStub{}, SourceBinding: strings.Repeat("a", 64), MaxDocumentChars: 100,
 	})
 	require.NoError(t, err)
+	filename := mediaFilename(mediaType)
 	policy := media.InspectionPolicy{
-		Filename: "sample.mp4", DeclaredMediaType: mediaType,
+		Filename: filename, DeclaredMediaType: mediaType,
 		ExpectedBytes: int64(len(data)), ExpectedSHA256: sha256Hex(data),
 		DescriptorFingerprint: provider.Descriptor().Fingerprint,
 		ProfileFingerprint:    strings.Repeat("b", 64), DisclosureFingerprint: strings.Repeat("c", 64),
@@ -146,7 +166,7 @@ func newCaptionFixture(
 	facts, local := proof.Facts()
 	require.True(t, local)
 	upload := &testCaptionUpload{reader: bytes.NewReader(data), proof: proof, metadata: document.AuthorizedUploadMetadata{
-		Filename: "sample.mp4", MediaFamily: facts.MediaFamily, MediaType: facts.MediaType,
+		Filename: filename, MediaFamily: facts.MediaFamily, MediaType: facts.MediaType,
 		ByteLength: int64(len(data)), SHA256: sha256Hex(data), CapabilityRecordChecksum: facts.Checksum,
 		ProviderMetadataChecksum: strings.Repeat("3", 64), InputKind: document.RenditionInputOriginalFile,
 		InputBinding: strings.Repeat("d", 64),
@@ -163,6 +183,17 @@ func newCaptionFixture(
 		AuthorizedAt: started.Format(providerTimestampForm), ExpiresAt: started.Add(10 * time.Minute).Format(providerTimestampForm),
 	}
 	return provider, upload, authorization
+}
+
+func mediaFilename(mediaType string) string {
+	switch mediaType {
+	case "audio/mpeg":
+		return "sample.mp3"
+	case "audio/wav":
+		return "sample.wav"
+	default:
+		return "sample.mp4"
+	}
 }
 
 const providerTimestampForm = "2006-01-02T15:04:05.000000000Z"
