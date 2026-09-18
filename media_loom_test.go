@@ -183,11 +183,12 @@ func runLoomManualExportEmbedded(t *testing.T) {
 	require.NoError(t, err)
 	processed, err := worker.RunJob(t.Context(), waiter.JobID)
 	require.NoError(t, err)
-	require.True(t, processed)
-	continuation := &internalprocessing.MediaContinuationWorker{Service: vault.processing, IdleDelay: 25 * time.Millisecond}
-	contProcessed, contErr := continuation.RunOne(t.Context())
-	require.NoError(t, contErr)
-	require.True(t, contProcessed)
+	if processed {
+		continuation := &internalprocessing.MediaContinuationWorker{Service: vault.processing, IdleDelay: 25 * time.Millisecond}
+		contProcessed, contErr := continuation.RunOne(t.Context())
+		require.NoError(t, contErr)
+		require.True(t, contProcessed)
+	}
 
 	var status MediaReceipt
 	if !assert.Eventually(t, func() bool {

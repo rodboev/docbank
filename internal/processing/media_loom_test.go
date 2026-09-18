@@ -3,7 +3,6 @@ package processing
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -235,7 +234,7 @@ func TestRemoteRecordingVideoAdmission(t *testing.T) {
 	require.NoError(t, <-revokeErr)
 	importResult := <-importErr
 	if importResult != nil {
-		require.True(t, errors.Is(importResult, store.ErrNotFound), importResult)
+		require.ErrorIs(t, importResult, store.ErrNotFound)
 	}
 
 	_, err = service.SubmitSuppliedMedia(t.Context(), SuppliedMediaRequest{
