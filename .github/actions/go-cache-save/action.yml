@@ -7,9 +7,7 @@ runs:
   steps:
     - name: Save caches
       if: >-
-        ((github.event_name == 'push' && github.ref == 'refs/heads/main')
-        || (github.event_name == 'pull_request' && github.repository == 'rodboev/docbank'
-        && github.event.pull_request.head.repo.full_name == github.repository))
+        github.event_name == 'push' && github.ref == 'refs/heads/main'
         && env.GO_CACHE_HIT != 'true'
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
