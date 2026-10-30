@@ -7,6 +7,7 @@
  * This is the palette definition file, so raw colors belong here; it lives
  * outside src/ because kit-ui-check guards component styles, not palettes.
  */
+/* Test-only frontend change for CI path selection. */
 :root {
   --bg-primary: #f7f8fa;
   --bg-surface: #ffffff;
