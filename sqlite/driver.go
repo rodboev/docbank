@@ -1,5 +1,6 @@
 // Package sqlite defines the database-driver boundary used by embedded and
 // standalone Docbank vaults.
+// Test-only Go change for CI path selection.
 package sqlite
 
 import (
