@@ -1,7 +1,6 @@
 name: CI
 
-# The PR dispatcher always calls the main-pinned workflow on GitHub-hosted
-# runners. Changes to ci.yml take effect for PRs after they merge to main.
+# Use the candidate workflow for slice 4 probes.
 on:
   pull_request:
 
@@ -9,4 +8,4 @@ permissions: read-all
 
 jobs:
   run:
-    uses: kenn-io/docbank/.github/workflows/ci.yml@main
+    uses: ./.github/workflows/ci.yml
