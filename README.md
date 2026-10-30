@@ -179,3 +179,5 @@ Copyright 2026 Kenn Software LLC.
 
 Docbank is licensed under the [Apache License, Version 2.0](LICENSE). See
 [NOTICE](NOTICE) for attribution information.
+
+<!-- Test-only documentation change for CI path selection. -->
