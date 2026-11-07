@@ -70,6 +70,7 @@ def main():
         raise RuntimeError("Source checkout must be clean")
     (results / "environment.txt").write_text(
         f"source={BASE}\nplatform={platform.platform()}\n"
+        + f"build_TMPDIR={env['TMPDIR']}\nbuild_GOTMPDIR={env['GOTMPDIR']}\n"
         + capture(["go", "version"])
         + capture(["go", "env", "-json", "GOOS", "GOARCH", "CGO_ENABLED", "GOFLAGS", "GOTMPDIR", "GOCACHE"])
     )
@@ -111,13 +112,29 @@ def main():
             if "B" in order:
                 device = subprocess.check_output(["hdiutil", "attach", "-nomount", "ram://4194304"], text=True).strip()
                 subprocess.run(["diskutil", "eraseVolume", "APFS", "docbank-test", device], check=True)
-                ram = Path(tempfile.mkdtemp(prefix="tmp.", dir="/Volumes/docbank-test"))
+                ram = Path(tempfile.mkdtemp(prefix="tmp.", dir="/Volumes/docbank-test")).resolve()
+
+            def snapshot(label, phase):
+                with (results / f"{label}-{phase}.txt").open("w") as log:
+                    log.write(datetime.datetime.now(datetime.timezone.utc).isoformat() + "\n")
+                    log.flush()
+                    subprocess.run(["df", "-k", str(ram if ram else disk)], env=env,
+                                   stdout=log, stderr=subprocess.STDOUT, check=True)
+                    if platform.system() == "Darwin":
+                        subprocess.run(["vm_stat"], env=env, stdout=log, stderr=subprocess.STDOUT, check=True)
+
             with (results / "arms.jsonl").open("w", buffering=1) as summary:
                 for index, arm in enumerate(order, 1):
                     label = f"{index:02d}-{arm}"
-                    arm_env = env | {"TMPDIR": str(ram if arm == "B" else disk)}
+                    # Go 1.27 testing.T.TempDir uses GOTMPDIR; os.TempDir uses TMPDIR.
+                    directory = str(ram if arm == "B" else disk)
+                    arm_env = env | {"GOTMPDIR": directory, "TMPDIR": directory}
+                    (results / f"{label}-environment.json").write_text(json.dumps(
+                        {name: str(Path(arm_env[name]).resolve(strict=True)) for name in ("GOTMPDIR", "TMPDIR")},
+                        indent=2) + "\n")
                     binary = binaries["A" if arm == "B" else arm]
                     command = [converter, "-t", "-p", PACKAGE, binary, "-test.v=test2json", "-test.count=1", "-test.timeout=30m"]
+                    snapshot(label, "before")
                     started = datetime.datetime.now(datetime.timezone.utc).isoformat()
                     before = time.monotonic()
                     timed_out = False
@@ -135,6 +152,7 @@ def main():
                                 process.wait(timeout=5)
                             code = 124
                     wall = time.monotonic() - before
+                    snapshot(label, "after")
                     events = [json.loads(line) for line in (results / f"{label}.json").read_text().splitlines()]
                     terminal = [event for event in events if event.get("Test") and "/" not in event["Test"] and event["Action"] in ("pass", "fail", "skip")]
                     record = dict(arm=arm, index=index, started=started, wall_seconds=wall, exit_code=code,
