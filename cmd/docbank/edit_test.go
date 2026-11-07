@@ -24,6 +24,7 @@ import (
 	"go.kenn.io/docbank/internal/apiclient"
 	"go.kenn.io/docbank/internal/daemonconn"
 	"go.kenn.io/docbank/internal/packagetest"
+	"go.kenn.io/docbank/internal/sqlitetest"
 )
 
 func TestEditCreatesVersionAndSkipsUnchangedContent(t *testing.T) {
@@ -305,6 +306,7 @@ func TestMain(m *testing.M) {
 	if os.Getenv("DOCBANK_EDIT_TEST_HELPER") == "1" {
 		os.Exit(runEditHelper())
 	}
+	sqlitetest.DisableSync.Store(true)
 	code := packagetest.RunWithLockRegistry(m)
 	if docbankBuildDir != "" {
 		if err := os.RemoveAll(docbankBuildDir); err != nil {

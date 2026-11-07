@@ -1862,6 +1862,8 @@ The report-export browser check still requires one unretried pass.
 
 Go test workflows set `GOTRACEBACK=all` for crashes. When diagnosing a hang, call Kit's `stacktest.Dump(t)` before failing an expired wait to log every goroutine's stack.
 
+The `internal/store`, `internal/api`, and `cmd/docbank` test binaries disable SQLite synchronization through `sqlitetest.DisableSync` for their disposable databases. Both built-in adapters apply the setting to every writable connection, including later pool connections. Separately built CLI binaries retain ordinary synchronization settings.
+
 CLI redaction verification tests run in separate test processes because the PDF worker's 1 GiB RSS ceiling counts all memory in its process. Each child keeps the real PDF checks and the qualified memory limit.
 
 The native PDF engine reclaims retired runtime memory after each page while holding its exclusive backing lease. This keeps decoded module metadata from accumulating between pages under the same RSS ceiling.
